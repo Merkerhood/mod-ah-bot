@@ -282,7 +282,7 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         LOG_INFO("module", "AHBot [{}]: Considering {} auctions per interval to bid on.", _id, bidsPerInterval);
     }
 
-    for (uint32 count = 1; count <= bidsPerInterval && !auctionsGuidsToConsider.empty(); ++count)
+    for (uint32 count = 1; count <= bidsPerInterval; ++count)
     {
         if (config->DebugOutBuyer)
         {
