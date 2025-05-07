@@ -237,12 +237,12 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
 
     // Fetches content of selected AH to look for possible bids
     AuctionHouseObject* auctionHouseObject = sAuctionMgr->GetAuctionsMap(config->GetAHFID());
-    std::vector<uint32> auctionsGuidsToConsider;
+    std::set<uint32> auctionsGuidsToConsider;
 
     do
     {
         uint32 auctionGuid = ahContentQueryResult->Fetch()->Get<uint32>();
-        auctionsGuidsToConsider.push_back(auctionGuid);
+        auctionsGuidsToConsider.insert(auctionGuid);
     } while (ahContentQueryResult->NextRow());
 
     if (config->DebugOutBuyer)
@@ -284,32 +284,19 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
 
     for (uint32 count = 1; count <= bidsPerInterval; ++count)
     {
-        if (config->DebugOutBuyer)
-        {
-            LOG_INFO("module", "AHBot [{}]: Attempting bid {}/{}", _id, count, bidsPerInterval);
+        if (auctionsGuidsToConsider.empty()) {
+            return;
         }
 
-        if (auctionsGuidsToConsider.empty())
-        {
-            if (config->DebugOutBuyer)
-            {
-                LOG_INFO("module", "AHBot [{}]: No more auctions to consider.", _id);
-            }
-            break;
-        }
-
-        // Choose a random auction from possible auctions
-        uint32 randomIndex = urand(0, auctionsGuidsToConsider.size() - 1);
-
-        std::vector<uint32>::iterator itBegin = auctionsGuidsToConsider.begin();
-        //std::advance(it, randomIndex);
-
-        uint32 auctionID = auctionsGuidsToConsider.at(randomIndex);
-
+        std::set<uint32>::iterator it = auctionsGuidsToConsider.begin();
+        std::advance(it, 0);
+        uint32 auctionID = *it;
         AuctionEntry* auction = auctionHouseObject->GetAuction(auctionID);
 
+        //
         // Prevent to bid again on the same auction
-        auctionsGuidsToConsider.erase(itBegin + randomIndex);
+        //
+        auctionsGuidsToConsider.erase(it);
 
         if (!auction)
         {
@@ -344,7 +331,8 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         //
         // Determine current price.
         //
-        uint32 currentPrice = auction->bid ? auction->bid : auction->startbid;
+
+        uint32 currentPrice = static_cast<uint32>(auction->bid ? auction->bid : auction->startbid);
 
          //
         // Determine maximum bid and skip auctions with too high a currentPrice.
@@ -480,7 +468,7 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         uint32 minimumOutbid = auction->GetAuctionOutBid();
         if ((currentPrice + minimumOutbid) > bidPrice)
         {
-            bidPrice = currentPrice + minimumOutbid;
+            bidPrice = static_cast<uint32>(currentPrice + minimumOutbid);
         }
 
         if (bidPrice > maximumBid)
@@ -489,7 +477,7 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
             {
                 LOG_INFO("module", "AHBot [{}]: Bid was above bidMax for item={} AH={}", _id, auction->item_guid.ToString(), config->GetAHID());
             }
-            bidPrice = maximumBid;
+            bidPrice = static_cast<uint32>(maximumBid);
         }
 
         if (config->DebugOutBuyer)

@@ -68,6 +68,7 @@ private:
     time_t _lastCleanupTime;
 
     // Main operations
+    //
     void Sell(Player *AHBplayer, AHBConfig *config);
     void Buy (Player *AHBplayer, AHBConfig *config, WorldSession *session);
 
