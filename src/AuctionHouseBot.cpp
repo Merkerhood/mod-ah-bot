@@ -713,12 +713,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         uint32 itemID = itemsToSell[cnt];
 
-        // Skip if no item is selected
-        if (itemID == 0)
-        {
-            continue;
-        }
-
         // Update Auctions count for current Bot
         nbOfAuctions = getNofAuctions(config, auctionHouse, AHBplayer->GetGUID());
 
