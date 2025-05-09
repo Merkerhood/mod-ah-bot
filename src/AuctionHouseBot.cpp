@@ -622,19 +622,10 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     uint32 maxAuctionsPerBot = (maxTotalItems + numBots - 1) / numBots;
     uint32 minAuctionsPerBot = (minTotalItems + numBots - 1) / numBots;
 
-    bool   aboveMin = false;
-    bool   aboveMax = false;
+    bool   aboveMax=false;
     uint32 nbOfAuctions = getNofAuctions(config, auctionHouse, AHBplayer->GetGUID());
 
     uint32 nbItemsToSellThisCycle = 0;
-
-    if (nbOfAuctions >= minTotalItems)
-    {
-        if (config->DebugOutSeller)
-        {
-            LOG_TRACE("module", "AHBot [{}]: Auctions above minimum", _id);
-        }
-    }
 
     if (nbOfAuctions >= maxAuctionsPerBot)
     {
@@ -721,6 +712,12 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         uint32 itemTypeSelectedToSell = 0;
 
         uint32 itemID = itemsToSell[cnt];
+
+        // Skip if no item is selected
+        if (itemID == 0)
+        {
+            continue;
+        }
 
         // Update Auctions count for current Bot
         nbOfAuctions = getNofAuctions(config, auctionHouse, AHBplayer->GetGUID());
@@ -1102,7 +1099,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
     if (config->TraceSeller)
     {
-        LOG_INFO("module", "AHBot [{}]: auctionhouse {}, req={}, sold={}, aboveMin={}, aboveMax={}, loopBrk={}, noNeed={}, tooMany={}, binEmpty={}, err={}", _id, config->GetAHID(), nbItemsToSellThisCycle, nbSold, aboveMin, aboveMax, loopBrk, noNeed, tooMany, binEmpty, err);
+        LOG_INFO("module", "AHBot [{}]: auctionhouse {}, req={}, sold={}, aboveMax={}, loopBrk={}, noNeed={}, tooMany={}, binEmpty={}, err={}", _id, config->GetAHID(), nbItemsToSellThisCycle, nbSold, aboveMax, loopBrk, noNeed, tooMany, binEmpty, err);
     }
 
 }
