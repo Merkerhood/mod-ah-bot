@@ -718,7 +718,10 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         if (nbOfAuctions >= maxAuctionsPerBot)
         {
-            LOG_INFO("module", "AHBot [{}]: Reached max auctions per bot: {}", _id, maxAuctionsPerBot);
+            if (config->DebugOutSeller)
+            {
+                LOG_INFO("module", "AHBot [{}]: Reached max auctions per bot: {}", _id, maxAuctionsPerBot);
+            }
             break;
         }
 
