@@ -127,17 +127,14 @@ AuctionHouseBot.MaxStackSize = 20
 # Alliance configuration
 AllianceBiddingInterval = 10
 AllianceBidsPerInterval = 5
-AllianceSellingInterval = 10
 
 # Horde configuration
 HordeBiddingInterval = 10
 HordeBidsPerInterval = 5
-HordeSellingInterval = 10
 
 # Neutral configuration
 NeutralBiddingInterval = 10
 NeutralBidsPerInterval = 5
-NeutralSellingInterval = 10
 
 # Use auction count or days to calculate moving average prices
 AuctionHouseBot.UseAuctionCount = true

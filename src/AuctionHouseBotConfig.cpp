@@ -1696,7 +1696,7 @@ void AHBConfig::DecItemCounts(uint32 ahbotItemType)
         }
         break;
 
-    case AHB_GREEN_TG:        
+    case AHB_GREEN_TG:
         if (greenTGoods > 0)
         {
             --greenTGoods;
@@ -1720,7 +1720,7 @@ void AHBConfig::DecItemCounts(uint32 ahbotItemType)
     case AHB_ORANGE_TG:
         if (orangeTGoods > 0)
         {
-            --orangeTGoods;        
+            --orangeTGoods;
         }
         break;
 
@@ -2075,11 +2075,6 @@ void AHBConfig::InitializeFromFile()
     _hordeBidsPerInterval          = sConfigMgr->GetOption<uint32>("HordeBidsPerInterval", 5);
     _neutralBiddingInterval        = sConfigMgr->GetOption<uint32>("NeutralBiddingInterval", 10);
     _neutralBidsPerInterval        = sConfigMgr->GetOption<uint32>("NeutralBidsPerInterval", 5);
-
-    // Load selling intervalls
-    _allianceSellingInterval       = sConfigMgr->GetOption<uint32>("AllianceSellingInterval", 10);
-    _hordeSellingInterval          = sConfigMgr->GetOption<uint32>("HordeSellingInterval", 10);
-    _neutralSellingInterval        = sConfigMgr->GetOption<uint32>("NeutralSellingInterval", 10);
 
     // Load moving average adjustments
     UseAuctionCount                = sConfigMgr->GetOption<bool>("AuctionHouseBot.UseAuctionCount", true);

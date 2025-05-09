@@ -282,7 +282,7 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         LOG_INFO("module", "AHBot [{}]: Considering {} auctions per interval to bid on.", _id, bidsPerInterval);
     }
 
-    for (uint32 count = 1; count <= bidsPerInterval; ++count)
+    for (uint32 count = 1; count <= bidsPerInterval && !auctionsGuidsToConsider.empty(); ++count)
     {
         if (auctionsGuidsToConsider.empty()) {
             return;
@@ -648,29 +648,15 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         return;
     }
 
-     if (totalAuctions < minTotalItems)
-     {
-         // Add new auctions quickly until totalAuctions reach minItems
-         maxItemsToList = minAuctionsPerBot - nbOfAuctions;
+    maxItemsToList = maxAuctionsPerBot - nbOfAuctions;
 
-         // Ensure maxItemsToList is less than or equal to minAuctionsPerBot
-         if (maxItemsToList > minAuctionsPerBot)
-         {
-             maxItemsToList = minAuctionsPerBot;
-         }
+    // Always sell a fixed number of items per tick based on config
+    nbItemsToSellThisCycle = config->ItemsPerCycle;
 
-         nbItemsToSellThisCycle = urand(maxItemsToList, minAuctionsPerBot);
-    }
-    else
+    if (nbItemsToSellThisCycle > maxItemsToList)
     {
-        // Gradually increase the number of auctions with ItemsPerCycle
-        maxItemsToList = maxAuctionsPerBot - nbOfAuctions;
-        nbItemsToSellThisCycle = config->ItemsPerCycle;
-
-        if (nbItemsToSellThisCycle > maxItemsToList)
-        {
-            nbItemsToSellThisCycle = maxItemsToList;
-        }
+        // make sure we dont list more items than needed per bot
+        nbItemsToSellThisCycle = maxItemsToList;
     }
 
     // Log the number of items to list
@@ -1348,11 +1334,7 @@ void AuctionHouseBot::Update()
         // Alliance
         if (_allianceConfig)
         {
-            if ((currentTime - _lastrun_a_sec_Sell) >= (_allianceConfig->GetAllianceSellingInterval() * MINUTE))
-            {
-                Sell(&_AHBplayer, _allianceConfig);
-                _lastrun_a_sec_Sell = currentTime;
-            }
+            Sell(&_AHBplayer, _allianceConfig);
 
             if ((currentTime - _lastrun_a_sec_Buy) >= (_allianceConfig->GetAllianceBiddingInterval() * MINUTE) && (_allianceConfig->GetAllianceBidsPerInterval() > 0))
             {
@@ -1369,11 +1351,7 @@ void AuctionHouseBot::Update()
         // Horde
         if (_hordeConfig)
         {
-            if ((currentTime - _lastrun_h_sec_Sell) >= (_hordeConfig->GetHordeSellingInterval() * MINUTE))
-            {
-                Sell(&_AHBplayer, _hordeConfig);
-                _lastrun_h_sec_Sell = currentTime;
-            }
+            Sell(&_AHBplayer, _hordeConfig);
 
             if ((currentTime - _lastrun_h_sec_Buy) >= (_hordeConfig->GetHordeBiddingInterval() * MINUTE) && (_hordeConfig->GetHordeBidsPerInterval() > 0))
             {
@@ -1389,11 +1367,7 @@ void AuctionHouseBot::Update()
         // Neutral
         if (_neutralConfig)
         {
-            if ((currentTime - _lastrun_n_sec_Sell) >= (_neutralConfig->GetNeutralSellingInterval() * MINUTE))
-            {
-                Sell(&_AHBplayer, _neutralConfig);
-                _lastrun_n_sec_Sell = currentTime;
-            }
+            Sell(&_AHBplayer, _neutralConfig);
 
             if ((currentTime - _lastrun_n_sec_Buy) >= (_neutralConfig->GetNeutralBiddingInterval() * MINUTE) && (_neutralConfig->GetNeutralBidsPerInterval() > 0))
             {

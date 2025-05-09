@@ -114,11 +114,6 @@ private:
     uint32 _neutralBiddingInterval;
     uint32 _neutralBidsPerInterval;
 
-    // Selling intervalls
-    uint32 _allianceSellingInterval;
-    uint32 _hordeSellingInterval;
-    uint32 _neutralSellingInterval;
-
     // Amount of items to be sold in absolute values
     uint32 greytgp;
     uint32 whitetgp;
@@ -370,10 +365,6 @@ public:
 
     uint32 GetNeutralBiddingInterval() const { return _neutralBiddingInterval; }
     uint32 GetNeutralBidsPerInterval() const { return _neutralBidsPerInterval; }
-
-    uint32 GetAllianceSellingInterval() const { return _allianceSellingInterval; }
-    uint32 GetHordeSellingInterval() const { return _hordeSellingInterval; }
-    uint32 GetNeutralSellingInterval() const { return _neutralSellingInterval; }
 };
 
 //
