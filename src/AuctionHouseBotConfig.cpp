@@ -1982,26 +1982,31 @@ void AHBConfig::UpdateItemStats(uint32 id, uint32 stackSize, uint64 buyout)
 
     uint32 perUnit = buyout / stackSize;
 
+    // Use references to avoid repeated map lookups
+    auto& count = itemsCount[id];
+    auto& sum = itemsSum[id];
+    auto& price = itemsPrice[id];
+
     if (itemsCount.count(id) == 0)
     {
-        itemsCount[id] = 1;
-        itemsSum[id]   = perUnit;
-        itemsPrice[id] = perUnit;
+        count = 1;
+        sum   = perUnit;
+        price = perUnit;
     }
     else
     {
-        itemsCount[id]++;
+        count++;
 
         //
         // Reset the statistics to force adapt to the market price.
         // Adds a little of randomness by adding/removing a range of 9 to the threshold.
         //
 
-        if (itemsCount[id] > MarketResetThreshold + (urand(1, 19) - 10))
+        if (count > MarketResetThreshold + (urand(1, 19) - 10))
         {
-            itemsCount[id] = 1;
-            itemsSum[id]   = perUnit;
-            itemsPrice[id] = perUnit;
+            count = 1;
+            sum   = perUnit;
+            price = perUnit;
         }
         else
         {
@@ -2010,14 +2015,14 @@ void AHBConfig::UpdateItemStats(uint32 id, uint32 stackSize, uint64 buyout)
             // right now is a plain, boring average of the ~100 previous auctions.
             //
 
-            itemsSum[id]   = (itemsSum[id] + perUnit);
-            itemsPrice[id] = itemsSum[id] / itemsCount[id];
+            sum   += perUnit;
+            price = sum / count;
         }
     }
 
     if (DebugOutConfig)
     {
-        LOG_INFO("module", "Updating market price item={}, price={}", id, itemsPrice[id]);
+        LOG_INFO("module", "Updating market price item={}, price={}", id, price);
     }
 }
 
