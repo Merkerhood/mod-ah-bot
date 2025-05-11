@@ -277,6 +277,18 @@ void AHBot_AuctionHouseScript::OnAuctionExpire(AuctionHouseObject* /*ah*/, Aucti
 
     config->UpdateItemStats(auction->item_template, auction->itemCount, auction->bid);
 
+    // Decrement item counts for the expired auction
+    ItemTemplate const* prototype = sObjectMgr->GetItemTemplate(auction->item_template);
+    if (prototype)
+    {
+        config->DecItemCounts(prototype->Class, prototype->Quality);
+    }
+    else
+    {
+        LOG_ERROR("module", "AHBot: Item prototype not found for expired auction");
+    }
+
+    // Log the updated total item counts
     if (config->DebugOut)
     {
         LOG_INFO("module", "AHBot: Auction Expired ah={}, auctionId={} Bot totalAHItems={}", AuctionHouseId(ahEntry->houseId), auction->Id, config->TotalItemCounts());
