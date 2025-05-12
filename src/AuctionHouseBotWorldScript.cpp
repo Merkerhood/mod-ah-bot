@@ -182,13 +182,7 @@ void AHBot_WorldScript::PopulateBots()
     // Insert the bot in the list used for auction house iterations
     gBots.clear();
 
-    gAllianceConfig->LoadBotGUIDs();
-    gHordeConfig->LoadBotGUIDs();
-    gNeutralConfig->LoadBotGUIDs();
-
-    const std::vector<uint32>& botGUIDs = gAllianceConfig->GetBotGUIDs(); // Assuming all configs have the same GUIDs
-
-    for (uint32 guid : botGUIDs)
+    for (uint32 guid : gBotsId)
     {
         AuctionHouseBot* bot = new AuctionHouseBot(account, guid);
         bot->Initialize(gAllianceConfig, gHordeConfig, gNeutralConfig);
