@@ -46,3 +46,13 @@ local.properties
 .loadpath
 .project
 .cproject
+
+#
+# Visual Studio Code
+#
+[.vscode](http://_vscodecontentref_/11)
+/.vscode/
+.vscode-test/*
+.vscode-test-*
+
+.github
