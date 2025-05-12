@@ -27,8 +27,10 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
     bool debug = sConfigMgr->GetOption<bool>("AuctionHouseBot.DEBUG", false);
     bool UsePlayerbotsAsAHBots = sConfigMgr->GetOption<bool>("AuctionHouseBot.UsePlayerbotsAsAHBots", false);
 
-    std::vector<uint32> botGUIDs;
     uint32 account = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Account", 0);
+
+    // Clear the global bot ID set
+    gBotsId.clear();
 
     if(UsePlayerbotsAsAHBots)
     {
@@ -45,7 +47,7 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
             {
                 Field* fields = result->Fetch();
                 uint32 botGuid = fields[0].Get<uint32>();
-                botGUIDs.push_back(botGuid);
+                gBotsId.insert(botGuid);
 
                 if (debug)
                 {
@@ -70,17 +72,18 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
         {
             try
             {
-                botGUIDs.push_back(std::stoul(guid));
+                uint32 botGuid = std::stoul(guid);
+                gBotsId.insert(botGuid);
+
+                if (debug)
+                {
+                    LOG_INFO("server.loading", "AHBot: Adding bot GUID {}", botGuid);
+                }
             }
             catch (const std::exception& e)
             {
                 LOG_ERROR("server.loading", "AHBot: Invalid GUID '{}' in configuration: {}", guid, e.what());
             }
-        }
-
-        if (debug)
-        {
-            LOG_INFO("module", "AHBot: Player bots will not be used, instead we will use the fallback account {} and GUIDs {}", account, guidsStr);
         }
     }
 
@@ -89,22 +92,6 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
     {
         LOG_ERROR("server.loading", "AHBot: Account id and GUIDs list missing from configuration; is that the right file?");
         return;
-    }
-
-    gBotsId.clear();
-
-    // Clear the global bot ID set
-    gBotsId.clear();
-
-    // Add GUIDs to the global bot ID set
-    for (uint32 botId : botGUIDs)
-    {
-        gBotsId.insert(botId);
-
-        if (debug)
-        {
-            LOG_INFO("server.loading", "AHBot: Adding bot GUID {}", botId);
-        }
     }
 
     // If no GUIDs were added, fallback to querying all characters of the account
@@ -117,12 +104,12 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
             do
             {
                 Field* fields = result->Fetch();
-                uint32 botId = fields[0].Get<uint32>();
-                gBotsId.insert(botId);
+                uint32 botGuid = fields[0].Get<uint32>();
+                gBotsId.insert(botGuid);
 
                 if (debug)
                 {
-                    LOG_INFO("server.loading", "AHBot: Adding bot GUID {} from account {}", botId, account);
+                    LOG_INFO("server.loading", "AHBot: Adding bot GUID {} from account {}", botGuid, account);
                 }
             } while (result->NextRow());
         }
