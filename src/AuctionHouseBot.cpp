@@ -1751,8 +1751,8 @@ void AuctionHouseBot::Initialize(AHBConfig* allianceConfig, AHBConfig* hordeConf
     }
 
     // Share the loaded price overrides across all configurations
-    _allianceConfig->itemPriceOverrides = _neutralConfig->itemPriceOverrides;
-    _hordeConfig->itemPriceOverrides = _neutralConfig->itemPriceOverrides;
+    //_allianceConfig->itemPriceOverrides = _neutralConfig->itemPriceOverrides;
+    //_hordeConfig->itemPriceOverrides = _neutralConfig->itemPriceOverrides;
 }
 
 // Helper function to join GUIDs into a comma-separated string
