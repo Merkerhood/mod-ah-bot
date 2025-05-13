@@ -50,6 +50,7 @@ local.properties
 #
 # Visual Studio Code
 #
+.vscode
 [.vscode](http://_vscodecontentref_/11)
 /.vscode/
 .vscode-test/*
