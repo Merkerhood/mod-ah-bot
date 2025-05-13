@@ -53,10 +53,6 @@ AuctionHouseBot::AuctionHouseBot(uint32 account, uint32 id)
     _account        = account;
     _id             = id;
 
-    _lastrun_a_sec_Sell  = time(NULL);
-    _lastrun_h_sec_Sell  = time(NULL);
-    _lastrun_n_sec_Sell  = time(NULL);
-
     _lastrun_a_sec_Buy  = time(NULL);
     _lastrun_h_sec_Buy  = time(NULL);
     _lastrun_n_sec_Buy  = time(NULL);

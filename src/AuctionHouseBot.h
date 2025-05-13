@@ -56,10 +56,6 @@ private:
     AHBConfig* _hordeConfig;
     AHBConfig* _neutralConfig;
 
-    time_t     _lastrun_a_sec_Sell;
-    time_t     _lastrun_h_sec_Sell;
-    time_t     _lastrun_n_sec_Sell;
-
     time_t     _lastrun_a_sec_Buy;
     time_t     _lastrun_h_sec_Buy;
     time_t     _lastrun_n_sec_Buy;
