@@ -191,8 +191,8 @@ void AHBot_WorldScript::PopulateBots()
 
     gNeutralConfig->LoadBotGUIDs();
     // there is not difference between the configs yet, so no need to load them separately
-    // gAllianceConfig->LoadBotGUIDs();
-    // gHordeConfig->LoadBotGUIDs();
+    gAllianceConfig->LoadBotGUIDs();
+    gHordeConfig->LoadBotGUIDs();
 
     const std::vector<uint32>& botGUIDs = gNeutralConfig->GetBotGUIDs(); // Assuming all configs have the same GUIDs
 
