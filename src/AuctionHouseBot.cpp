@@ -1742,9 +1742,12 @@ void AuctionHouseBot::Initialize(AHBConfig* allianceConfig, AHBConfig* hordeConf
     _hordeConfig = hordeConfig;
     _neutralConfig = neutralConfig;
 
-    _allianceConfig->LoadPriceOverrides();
-    _hordeConfig->LoadPriceOverrides();
+    // Load price overrides for each faction
     _neutralConfig->LoadPriceOverrides();
+    // Update the price overrides for each faction as they are all the same
+    _hordeConfig->SetPriceOverrides(_neutralConfig->GetPriceOverrides());
+    _allianceConfig->SetPriceOverrides(_neutralConfig->GetPriceOverrides());
+
 }
 
 // Helper function to join GUIDs into a comma-separated string
