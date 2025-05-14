@@ -587,32 +587,32 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         return;
     }
 
-    bool isGreyBinEmpty = config->GreyItemsBin.empty();
-    bool isWhiteBinEmpty = config->WhiteItemsBin.empty();
-    bool isGreenBinEmpty = config->GreenItemsBin.empty();
-    bool isBlueBinEmpty = config->BlueItemsBin.empty();
-    bool isPurpleBinEmpty = config->PurpleItemsBin.empty();
-    bool isOrangeBinEmpty = config->OrangeItemsBin.empty();
-    bool isYellowBinEmpty = config->YellowItemsBin.empty();
+    bool isGreyVecEmpty = config->GreyItemsVec.empty();
+    bool isWhiteVecEmpty = config->WhiteItemsVec.empty();
+    bool isGreenVecEmpty = config->GreenItemsVec.empty();
+    bool isBlueVecEmpty = config->BlueItemsVec.empty();
+    bool isPurpleVecEmpty = config->PurpleItemsVec.empty();
+    bool isOrangeVecEmpty = config->OrangeItemsVec.empty();
+    bool isYellowVecEmpty = config->YellowItemsVec.empty();
 
-    bool isGreyTGBinEmpty = config->GreyTradeGoodsBin.empty();
-    bool isWhiteTGBinEmpty = config->WhiteTradeGoodsBin.empty();
-    bool isGreenTGBinEmpty = config->GreenTradeGoodsBin.empty();
-    bool isBlueTGBinEmpty = config->BlueTradeGoodsBin.empty();
-    bool isPurpleTGBinEmpty = config->PurpleTradeGoodsBin.empty();
-    bool isOrangeTGBinEmpty = config->OrangeTradeGoodsBin.empty();
-    bool isYellowTGBinEmpty = config->YellowTradeGoodsBin.empty();
+    bool isGreyTGVecEmpty = config->GreyTradeGoodsVec.empty();
+    bool isWhiteTGVecEmpty = config->WhiteTradeGoodsVec.empty();
+    bool isGreenTGVecEmpty = config->GreenTradeGoodsVec.empty();
+    bool isBlueTGVecEmpty = config->BlueTradeGoodsVec.empty();
+    bool isPurpleTGVecEmpty = config->PurpleTradeGoodsVec.empty();
+    bool isOrangeTGVecEmpty = config->OrangeTradeGoodsVec.empty();
+    bool isYellowTGVecEmpty = config->YellowTradeGoodsVec.empty();
 
 
     // Check if all bins are empty and exit early
-    if (isGreyBinEmpty && isWhiteBinEmpty &&
-        isGreenBinEmpty && isBlueBinEmpty &&
-        isPurpleBinEmpty && isOrangeBinEmpty &&
-        isYellowBinEmpty
-        && isGreyTGBinEmpty && isWhiteTGBinEmpty &&
-        isGreenTGBinEmpty && isBlueTGBinEmpty &&
-        isPurpleTGBinEmpty && isOrangeTGBinEmpty &&
-        isYellowTGBinEmpty
+    if (isGreyVecEmpty && isWhiteVecEmpty &&
+        isGreenVecEmpty && isBlueVecempty &&
+        isPurpleVecEmpty && isOrangeVecEmpty &&
+        isYellowVecEmpty
+        && isGreyTGVecEmpty && isWhiteTGVecEmpty &&
+        isGreenTGVecEmpty && isBlueTGVecEmpty &&
+        isPurpleTGVecEmpty && isOrangeTGVecEmpty &&
+        isYellowTGVecEmpty
     )
     {
         if (config->DebugOutSeller)
@@ -621,22 +621,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         }
         return;
     }
-
-    // convert the bins to vectors
-    std::vector<uint32> greyItemsBin(config->GreyItemsBin.begin(), config->GreyItemsBin.end());
-    std::vector<uint32> greyTradeGoodsBin(config->GreyTradeGoodsBin.begin(), config->GreyTradeGoodsBin.end());
-    std::vector<uint32> whiteItemsBin(config->WhiteItemsBin.begin(), config->WhiteItemsBin.end());
-    std::vector<uint32> whiteTradeGoodsBin(config->WhiteTradeGoodsBin.begin(), config->WhiteTradeGoodsBin.end());
-    std::vector<uint32> greenItemsBin(config->GreenItemsBin.begin(), config->GreenItemsBin.end());
-    std::vector<uint32> greenTradeGoodsBin(config->GreenTradeGoodsBin.begin(), config->GreenTradeGoodsBin.end());
-    std::vector<uint32> blueItemsBin(config->BlueItemsBin.begin(), config->BlueItemsBin.end());
-    std::vector<uint32> blueTradeGoodsBin(config->BlueTradeGoodsBin.begin(), config->BlueTradeGoodsBin.end());
-    std::vector<uint32> purpleItemsBin(config->PurpleItemsBin.begin(), config->PurpleItemsBin.end());
-    std::vector<uint32> purpleTradeGoodsBin(config->PurpleTradeGoodsBin.begin(), config->PurpleTradeGoodsBin.end());
-    std::vector<uint32> orangeItemsBin(config->OrangeItemsBin.begin(), config->OrangeItemsBin.end());
-    std::vector<uint32> orangeTradeGoodsBin(config->OrangeTradeGoodsBin.begin(), config->OrangeTradeGoodsBin.end());
-    std::vector<uint32> yellowItemsBin(config->YellowItemsBin.begin(), config->YellowItemsBin.end());
-    std::vector<uint32> yellowTradeGoodsBin(config->YellowTradeGoodsBin.begin(), config->YellowTradeGoodsBin.end());
 
     // Retrieve the auction house situation
     AuctionHouseEntry const* ahEntry = sAuctionMgr->GetAuctionHouseEntryFromFactionTemplate(config->GetAHFID());
@@ -794,99 +778,99 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Poor
 
-            if (!isGreyBinEmpty && (currentGreyItems < maxGreyI))
+            if (!isGreyVecEmpty && (currentGreyItems < maxGreyI))
             {
                 itemTypeSelectedToSell = AHB_GREY_I;
-                itemID = getElement(greyItemsBin, urand(0, greyItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->greyItemsVec, urand(0, config->greyItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
-            else if (itemID == 0 && !isGreyTGBinEmpty && (currentGreyTG < maxGreyTG))
+            else if (itemID == 0 && !isGreyTGVecEmpty && (currentGreyTG < maxGreyTG))
             {
                 itemTypeSelectedToSell = AHB_GREY_TG;
-                itemID = getElement(greyTradeGoodsBin, urand(0, greyTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->greyTradeGoodsVec, urand(0, config->greyTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             // Normal
 
-            else if (itemID == 0 && !isWhiteBinEmpty && (currentWhiteItems < maxWhiteI))
+            else if (itemID == 0 && !isWhiteVecEmpty && (currentWhiteItems < maxWhiteI))
             {
                 itemTypeSelectedToSell = AHB_WHITE_I;
-                itemID = getElement(whiteItemsBin, urand(0, whiteItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->whiteItemsVec, urand(0, config->whiteItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isWhiteTGBinEmpty && (currentWhiteTG < maxWhiteTG))
+            else if (itemID == 0 && !isWhiteTGVecEmpty && (currentWhiteTG < maxWhiteTG))
             {
                 itemTypeSelectedToSell = AHB_WHITE_TG;
-                itemID = getElement(whiteTradeGoodsBin, urand(0, whiteTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->whiteTradeGoodsVec, urand(0, config->whiteTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             // Uncommon
 
-            else if (itemID == 0 && !isGreenBinEmpty && (currentGreenItems < maxGreenI))
+            else if (itemID == 0 && !isGreenVecEmpty && (currentGreenItems < maxGreenI))
             {
                 itemTypeSelectedToSell = AHB_GREEN_I;
-                itemID = getElement(greenItemsBin, urand(0, greenItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->greenItemsVec, urand(0, config->greenItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isGreenTGBinEmpty && (currentGreenTG < maxGreenTG))
+            else if (itemID == 0 && !isGreenTGVecEmpty && (currentGreenTG < maxGreenTG))
             {
                 itemTypeSelectedToSell = AHB_GREEN_TG;
-                itemID = getElement(greenTradeGoodsBin, urand(0, greenTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->greenTradeGoodsVec, urand(0, config->greenTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             // Rare
 
-            else if (itemID == 0 && !isBlueBinEmpty && (currentBlueItems < maxBlueI))
+            else if (itemID == 0 && !isBlueVecEmpty && (currentBlueItems < maxBlueI))
             {
                 itemTypeSelectedToSell = AHB_BLUE_I;
-                itemID = getElement(blueItemsBin, urand(0, blueItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->blueItemsVec, urand(0, config->blueItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isBlueTGBinEmpty && (currentBlueTG < maxBlueTG))
+            else if (itemID == 0 && !isBlueTGVecEmpty && (currentBlueTG < maxBlueTG))
             {
                 itemTypeSelectedToSell = AHB_BLUE_TG;
-                itemID = getElement(blueTradeGoodsBin, urand(0, blueTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->blueTradeGoodsVec, urand(0, config->blueTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             // Epic
 
-            else if (itemID == 0 && !isPurpleBinEmpty && (currentPurpleItems < maxPurpleI))
+            else if (itemID == 0 && !isPurpleVecEmpty && (currentPurpleItems < maxPurpleI))
             {
                 itemTypeSelectedToSell = AHB_PURPLE_I;
-                itemID = getElement(purpleItemsBin, urand(0, purpleItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->purpleItemsVec, urand(0, config->purpleItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isPurpleTGBinEmpty && (currentPurpleTG < maxPurpleTG))
+            else if (itemID == 0 && !isPurpleTGVecEmpty && (currentPurpleTG < maxPurpleTG))
             {
                 itemTypeSelectedToSell = AHB_PURPLE_TG;
-                itemID = getElement(purpleTradeGoodsBin, urand(0, purpleTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->purpleTradeGoodsVec, urand(0, config->purpleTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             // Legendary
 
-            else if (itemID == 0 && !isOrangeBinEmpty && (currentOrangeItems < maxOrangeI))
+            else if (itemID == 0 && !isOrangeVecEmpty && (currentOrangeItems < maxOrangeI))
             {
                 itemTypeSelectedToSell = AHB_ORANGE_I;
-                itemID = getElement(orangeItemsBin, urand(0, orangeItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->orangeItemsVec, urand(0, config->orangeItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isOrangeTGBinEmpty && (currentOrangeTG < maxOrangeTG))
+            else if (itemID == 0 && !isOrangeTGVecEmpty && (currentOrangeTG < maxOrangeTG))
             {
                 itemTypeSelectedToSell = AHB_ORANGE_TG;
-                itemID = getElement(orangeTradeGoodsBin, urand(0, orangeTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->orangeTradeGoodsVec, urand(0, config->orangeTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             // Artifact
 
-            else if (itemID == 0 && !isYellowBinEmpty && (currentYellowItems < maxYellowI))
+            else if (itemID == 0 && !isYellowVecEmpty && (currentYellowItems < maxYellowI))
             {
                 itemTypeSelectedToSell = AHB_YELLOW_I;
-                itemID = getElement(yellowItemsBin, urand(0, yellowItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->yellowItemsVec, urand(0, config->yellowItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isYellowTGBinEmpty && (currentYellowTG < maxYellowTG))
+            else if (itemID == 0 && !isYellowTGVecEmpty && (currentYellowTG < maxYellowTG))
             {
                 itemTypeSelectedToSell = AHB_YELLOW_TG;
-                itemID = getElement(yellowTradeGoodsBin, urand(0, yellowTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(config->yellowTradeGoodsVec, urand(0, config->yellowTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
         }
