@@ -875,7 +875,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
             else if (itemID == 0 && !isYellowBinEmpty && (currentYellowItems < maxYellowI))
             {
                 itemTypeSelectedToSell = AHB_YELLOW_I;
-                itemID = getElement(cyellowItemsBin, urand(0, yellowItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                itemID = getElement(yellowItemsBin, urand(0, yellowItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             else if (itemID == 0 && !isYellowTGBinEmpty && (currentYellowTG < maxYellowTG))
