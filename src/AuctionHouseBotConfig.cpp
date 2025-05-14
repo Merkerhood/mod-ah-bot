@@ -2163,15 +2163,15 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     //SetMaxItems(WorldDatabase.Query("SELECT maxitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
 
     // Load percentages
-    QueryResult result = WorldDatabase.Query(
+    QueryResult itemPercentages = WorldDatabase.Query(
         "SELECT percentgreytradegoods, percentwhitetradegoods, percentgreentradegoods, percentbluetradegoods, "
         "percentpurpletradegoods, percentorangetradegoods, percentyellowtradegoods, percentgreyitems, "
         "percentwhiteitems, percentgreenitems, percentblueitems, percentpurpleitems, percentorangeitems, "
         "percentyellowitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
 
-    if (result)
+    if (itemPercentages)
     {
-        Field* fields = result->Fetch();
+        Field* fields = itemPercentages->Fetch();
         uint32 greytg   = fields[0].Get<uint32>();
         uint32 whitetg  = fields[1].Get<uint32>();
         uint32 greentg  = fields[2].Get<uint32>();
