@@ -710,9 +710,9 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         uint32 itemID = itemsToSell[cnt];
 
         // Update Auctions count for current Bot
-        nbOfAuctions = getNofAuctions(config, auctionHouse, AHBplayer->GetGUID());
+        uint32 botAuctionsCount = nbOfAuctions + cnt;
 
-        if (nbOfAuctions >= maxAuctionsPerBot)
+        if (botAuctionsCount >= maxAuctionsPerBot)
         {
             if (config->DebugOutSeller)
             {
@@ -721,43 +721,43 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
             break;
         }
 
-         // init variables
-         uint32 loopbreaker = 0;
+        // init variables
+        uint32 loopbreaker = 0;
 
-         bool isGreyBinEmpty = config->GreyItemsBin.empty();
-         bool isWhiteBinEmpty = config->WhiteItemsBin.empty();
-         bool isGreenBinEmpty = config->GreenItemsBin.empty();
-         bool isBlueBinEmpty = config->BlueItemsBin.empty();
-         bool isPurpleBinEmpty = config->PurpleItemsBin.empty();
-         bool isOrangeBinEmpty = config->OrangeItemsBin.empty();
-         bool isYellowBinEmpty = config->YellowItemsBin.empty();
+        bool isGreyBinEmpty = config->GreyItemsBin.empty();
+        bool isWhiteBinEmpty = config->WhiteItemsBin.empty();
+        bool isGreenBinEmpty = config->GreenItemsBin.empty();
+        bool isBlueBinEmpty = config->BlueItemsBin.empty();
+        bool isPurpleBinEmpty = config->PurpleItemsBin.empty();
+        bool isOrangeBinEmpty = config->OrangeItemsBin.empty();
+        bool isYellowBinEmpty = config->YellowItemsBin.empty();
 
-         bool isGreyTGBinEmpty = config->GreyTradeGoodsBin.empty();
-         bool isWhiteTGBinEmpty = config->WhiteTradeGoodsBin.empty();
-         bool isGreenTGBinEmpty = config->GreenTradeGoodsBin.empty();
-         bool isBlueTGBinEmpty = config->BlueTradeGoodsBin.empty();
-         bool isPurpleTGBinEmpty = config->PurpleTradeGoodsBin.empty();
-         bool isOrangeTGBinEmpty = config->OrangeTradeGoodsBin.empty();
-         bool isYellowTGBinEmpty = config->YellowTradeGoodsBin.empty();
+        bool isGreyTGBinEmpty = config->GreyTradeGoodsBin.empty();
+        bool isWhiteTGBinEmpty = config->WhiteTradeGoodsBin.empty();
+        bool isGreenTGBinEmpty = config->GreenTradeGoodsBin.empty();
+        bool isBlueTGBinEmpty = config->BlueTradeGoodsBin.empty();
+        bool isPurpleTGBinEmpty = config->PurpleTradeGoodsBin.empty();
+        bool isOrangeTGBinEmpty = config->OrangeTradeGoodsBin.empty();
+        bool isYellowTGBinEmpty = config->YellowTradeGoodsBin.empty();
 
 
-         // Check if all bins are empty and exit early
-         if (isGreyBinEmpty && isWhiteBinEmpty &&
-             isGreenBinEmpty && isBlueBinEmpty &&
-             isPurpleBinEmpty && isOrangeBinEmpty &&
-             isYellowBinEmpty
-             && isGreyTGBinEmpty && isWhiteTGBinEmpty &&
-             isGreenTGBinEmpty && isBlueTGBinEmpty &&
-             isPurpleTGBinEmpty && isOrangeTGBinEmpty &&
-             isYellowTGBinEmpty
-         )
-         {
-             if (config->DebugOutSeller)
-             {
-                 LOG_ERROR("module", "AHBot [{}]: All item bins are empty, exiting loop", _id);
-             }
-             return;
-         }
+        // Check if all bins are empty and exit early
+        if (isGreyBinEmpty && isWhiteBinEmpty &&
+            isGreenBinEmpty && isBlueBinEmpty &&
+            isPurpleBinEmpty && isOrangeBinEmpty &&
+            isYellowBinEmpty
+            && isGreyTGBinEmpty && isWhiteTGBinEmpty &&
+            isGreenTGBinEmpty && isBlueTGBinEmpty &&
+            isPurpleTGBinEmpty && isOrangeTGBinEmpty &&
+            isYellowTGBinEmpty
+        )
+        {
+            if (config->DebugOutSeller)
+            {
+                LOG_ERROR("module", "AHBot [{}]: All item bins are empty, exiting loop", _id);
+            }
+            return;
+        }
 
         //
         // Select, in rarity order, a new random item
