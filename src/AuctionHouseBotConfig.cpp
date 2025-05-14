@@ -2467,6 +2467,19 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
         "buyerpricepurple, buyerpriceorange, buyerpriceyellow "
         "FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
 
+    //
+    // Load bidding interval
+    //
+
+    //SetBiddingInterval(WorldDatabase.Query("SELECT buyerbiddinginterval FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
+
+    //
+    // Load bids per interval
+    //
+
+    //SetBidsPerInterval(WorldDatabase.Query("SELECT buyerbidsperinterval FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
+    //disabled as we load from file now
+
     if (buyerPricesResult)
     {
         Field* fields = buyerPricesResult->Fetch();
@@ -2496,21 +2509,6 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     {
         LOG_ERROR("module", "Failed to load buyer prices for auctionhouse {}", GetAHID());
     }
-
-    //
-    // Load bidding interval
-    //
-
-    //SetBiddingInterval(WorldDatabase.Query("SELECT buyerbiddinginterval FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-
-    //
-    // Load bids per interval
-    //
-
-    //SetBidsPerInterval(WorldDatabase.Query("SELECT buyerbidsperinterval FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    //disabled as we load from file now
-
-
 
     //
     // Reload the list of disabled items
