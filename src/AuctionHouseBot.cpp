@@ -587,32 +587,15 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         return;
     }
 
-    bool isGreyVecEmpty = config->GreyItemsVec.empty();
-    bool isWhiteVecEmpty = config->WhiteItemsVec.empty();
-    bool isGreenVecEmpty = config->GreenItemsVec.empty();
-    bool isBlueVecEmpty = config->BlueItemsVec.empty();
-    bool isPurpleVecEmpty = config->PurpleItemsVec.empty();
-    bool isOrangeVecEmpty = config->OrangeItemsVec.empty();
-    bool isYellowVecEmpty = config->YellowItemsVec.empty();
-
-    bool isGreyTGVecEmpty = config->GreyTradeGoodsVec.empty();
-    bool isWhiteTGVecEmpty = config->WhiteTradeGoodsVec.empty();
-    bool isGreenTGVecEmpty = config->GreenTradeGoodsVec.empty();
-    bool isBlueTGVecEmpty = config->BlueTradeGoodsVec.empty();
-    bool isPurpleTGVecEmpty = config->PurpleTradeGoodsVec.empty();
-    bool isOrangeTGVecEmpty = config->OrangeTradeGoodsVec.empty();
-    bool isYellowTGVecEmpty = config->YellowTradeGoodsVec.empty();
-
-
     // Check if all bins are empty and exit early
-    if (isGreyVecEmpty && isWhiteVecEmpty &&
-        isGreenVecEmpty && isBlueVecempty &&
-        isPurpleVecEmpty && isOrangeVecEmpty &&
-        isYellowVecEmpty
-        && isGreyTGVecEmpty && isWhiteTGVecEmpty &&
-        isGreenTGVecEmpty && isBlueTGVecEmpty &&
-        isPurpleTGVecEmpty && isOrangeTGVecEmpty &&
-        isYellowTGVecEmpty
+    if (config->GreyItemsVec.empty() && config->WhiteItemsVec.empty() &&
+        config->GreenItemsVec.empty() && config->BlueItemsVec.empty() &&
+        config->PurpleItemsVec.empty() && config->OrangeItemsVec.empty() &&
+        config->YellowItemsVec.empty()
+        && config->GreyTradeGoodsVec.empty() && config->WhiteTradeGoodsVec.empty() &&
+        config->GreenTradeGoodsVec.empty() && config->BlueTradeGoodsVec.empty() &&
+        config->PurpleTradeGoodsVec.empty() && config->OrangeTradeGoodsVec.empty() &&
+        config->YellowTradeGoodsVec.empty()
     )
     {
         if (config->DebugOutSeller)
@@ -778,12 +761,12 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Poor
 
-            if (!isGreyVecEmpty && (currentGreyItems < maxGreyI))
+            if (!config->GreyItemsVec.empty() && (currentGreyItems < maxGreyI))
             {
                 itemTypeSelectedToSell = AHB_GREY_I;
                 itemID = getElement(config->greyItemsVec, urand(0, config->greyItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
-            else if (itemID == 0 && !isGreyTGVecEmpty && (currentGreyTG < maxGreyTG))
+            else if (itemID == 0 && !config->GreyTradeGoodsVec.empty() && (currentGreyTG < maxGreyTG))
             {
                 itemTypeSelectedToSell = AHB_GREY_TG;
                 itemID = getElement(config->greyTradeGoodsVec, urand(0, config->greyTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
@@ -791,13 +774,13 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Normal
 
-            else if (itemID == 0 && !isWhiteVecEmpty && (currentWhiteItems < maxWhiteI))
+            else if (itemID == 0 && !config->WhiteItemsVec.empty() && (currentWhiteItems < maxWhiteI))
             {
                 itemTypeSelectedToSell = AHB_WHITE_I;
                 itemID = getElement(config->whiteItemsVec, urand(0, config->whiteItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isWhiteTGVecEmpty && (currentWhiteTG < maxWhiteTG))
+            else if (itemID == 0 && !config->WhiteTradeGoodsVec.empty() && (currentWhiteTG < maxWhiteTG))
             {
                 itemTypeSelectedToSell = AHB_WHITE_TG;
                 itemID = getElement(config->whiteTradeGoodsVec, urand(0, config->whiteTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
@@ -805,13 +788,13 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Uncommon
 
-            else if (itemID == 0 && !isGreenVecEmpty && (currentGreenItems < maxGreenI))
+            else if (itemID == 0 && !config->GreenItemsVec.empty() && (currentGreenItems < maxGreenI))
             {
                 itemTypeSelectedToSell = AHB_GREEN_I;
                 itemID = getElement(config->greenItemsVec, urand(0, config->greenItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isGreenTGVecEmpty && (currentGreenTG < maxGreenTG))
+            else if (itemID == 0 && !config->GreenTradeGoodsVec.empty() && (currentGreenTG < maxGreenTG))
             {
                 itemTypeSelectedToSell = AHB_GREEN_TG;
                 itemID = getElement(config->greenTradeGoodsVec, urand(0, config->greenTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
@@ -819,13 +802,13 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Rare
 
-            else if (itemID == 0 && !isBlueVecEmpty && (currentBlueItems < maxBlueI))
+            else if (itemID == 0 && !config->BlueItemsVec.empty() && (currentBlueItems < maxBlueI))
             {
                 itemTypeSelectedToSell = AHB_BLUE_I;
                 itemID = getElement(config->blueItemsVec, urand(0, config->blueItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isBlueTGVecEmpty && (currentBlueTG < maxBlueTG))
+            else if (itemID == 0 && !config->BlueTradeGoodsVec.empty() && (currentBlueTG < maxBlueTG))
             {
                 itemTypeSelectedToSell = AHB_BLUE_TG;
                 itemID = getElement(config->blueTradeGoodsVec, urand(0, config->blueTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
@@ -833,13 +816,13 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Epic
 
-            else if (itemID == 0 && !isPurpleVecEmpty && (currentPurpleItems < maxPurpleI))
+            else if (itemID == 0 && !config->PurpleItemsVec.empty() && (currentPurpleItems < maxPurpleI))
             {
                 itemTypeSelectedToSell = AHB_PURPLE_I;
                 itemID = getElement(config->purpleItemsVec, urand(0, config->purpleItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isPurpleTGVecEmpty && (currentPurpleTG < maxPurpleTG))
+            else if (itemID == 0 && !config->PurpleTradeGoodsVec.empty() && (currentPurpleTG < maxPurpleTG))
             {
                 itemTypeSelectedToSell = AHB_PURPLE_TG;
                 itemID = getElement(config->purpleTradeGoodsVec, urand(0, config->purpleTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
@@ -847,13 +830,13 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Legendary
 
-            else if (itemID == 0 && !isOrangeVecEmpty && (currentOrangeItems < maxOrangeI))
+            else if (itemID == 0 && !config->OrangeItemsVec.empty() && (currentOrangeItems < maxOrangeI))
             {
                 itemTypeSelectedToSell = AHB_ORANGE_I;
                 itemID = getElement(config->orangeItemsVec, urand(0, config->orangeItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isOrangeTGVecEmpty && (currentOrangeTG < maxOrangeTG))
+            else if (itemID == 0 && !config->OrangeTradeGoodsVec.empty() && (currentOrangeTG < maxOrangeTG))
             {
                 itemTypeSelectedToSell = AHB_ORANGE_TG;
                 itemID = getElement(config->orangeTradeGoodsVec, urand(0, config->orangeTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
@@ -861,13 +844,13 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             // Artifact
 
-            else if (itemID == 0 && !isYellowVecEmpty && (currentYellowItems < maxYellowI))
+            else if (itemID == 0 && !config->YellowItemsVec.empty() && (currentYellowItems < maxYellowI))
             {
                 itemTypeSelectedToSell = AHB_YELLOW_I;
                 itemID = getElement(config->yellowItemsVec, urand(0, config->yellowItemsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            else if (itemID == 0 && !isYellowTGVecEmpty && (currentYellowTG < maxYellowTG))
+            else if (itemID == 0 && !config->YellowTradeGoodsVec.empty() && (currentYellowTG < maxYellowTG))
             {
                 itemTypeSelectedToSell = AHB_YELLOW_TG;
                 itemID = getElement(config->yellowTradeGoodsVec, urand(0, config->yellowTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
