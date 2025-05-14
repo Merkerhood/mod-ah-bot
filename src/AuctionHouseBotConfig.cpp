@@ -2162,128 +2162,91 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     //SetMinItems(WorldDatabase.Query("SELECT minitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
     //SetMaxItems(WorldDatabase.Query("SELECT maxitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
 
-    // Load percentages
-    QueryResult itemPercentages = WorldDatabase.Query(
-        "SELECT percentgreytradegoods, percentwhitetradegoods, percentgreentradegoods, percentbluetradegoods, "
+    // Load percentages, min/max prices, min/max bid prices, and max stacks in a single query
+    QueryResult databaseValuesResult = WorldDatabase.Query(
+        "SELECT "
+        "percentgreytradegoods, percentwhitetradegoods, percentgreentradegoods, percentbluetradegoods, "
         "percentpurpletradegoods, percentorangetradegoods, percentyellowtradegoods, percentgreyitems, "
         "percentwhiteitems, percentgreenitems, percentblueitems, percentpurpleitems, percentorangeitems, "
-        "percentyellowitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
-
-    if (itemPercentages)
-    {
-        Field* fields = itemPercentages->Fetch();
-        uint32 greytg   = fields[0].Get<uint32>();
-        uint32 whitetg  = fields[1].Get<uint32>();
-        uint32 greentg  = fields[2].Get<uint32>();
-        uint32 bluetg   = fields[3].Get<uint32>();
-        uint32 purpletg = fields[4].Get<uint32>();
-        uint32 orangetg = fields[5].Get<uint32>();
-        uint32 yellowtg = fields[6].Get<uint32>();
-
-        uint32 greyi    = fields[7].Get<uint32>();
-        uint32 whitei   = fields[8].Get<uint32>();
-        uint32 greeni   = fields[9].Get<uint32>();
-        uint32 bluei    = fields[10].Get<uint32>();
-        uint32 purplei  = fields[11].Get<uint32>();
-        uint32 orangei  = fields[12].Get<uint32>();
-        uint32 yellowi  = fields[13].Get<uint32>();
-
-        SetPercentages(greytg, whitetg, greentg, bluetg, purpletg, orangetg, yellowtg, greyi, whitei, greeni, bluei, purplei, orangei, yellowi);
-    }
-    else
-    {
-        LOG_ERROR("module", "Failed to load percentages for auctionhouse {}", GetAHID());
-    }
-
-    //
-    // Load min and max prices
-    //
-
-    QueryResult priceResult = WorldDatabase.Query(
-        "SELECT minpricegrey, maxpricegrey, minpricewhite, maxpricewhite, minpricegreen, maxpricegreen, "
+        "percentyellowitems, "
+        "minpricegrey, maxpricegrey, minpricewhite, maxpricewhite, minpricegreen, maxpricegreen, "
         "minpriceblue, maxpriceblue, minpricepurple, maxpricepurple, minpriceorange, maxpriceorange, "
-        "minpriceyellow, maxpriceyellow FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
-
-    if (priceResult)
-    {
-        Field* fields = priceResult->Fetch();
-        SetMinPrice(AHB_GREY, fields[0].Get<uint32>());
-        SetMaxPrice(AHB_GREY, fields[1].Get<uint32>());
-        SetMinPrice(AHB_WHITE, fields[2].Get<uint32>());
-        SetMaxPrice(AHB_WHITE, fields[3].Get<uint32>());
-        SetMinPrice(AHB_GREEN, fields[4].Get<uint32>());
-        SetMaxPrice(AHB_GREEN, fields[5].Get<uint32>());
-        SetMinPrice(AHB_BLUE, fields[6].Get<uint32>());
-        SetMaxPrice(AHB_BLUE, fields[7].Get<uint32>());
-        SetMinPrice(AHB_PURPLE, fields[8].Get<uint32>());
-        SetMaxPrice(AHB_PURPLE, fields[9].Get<uint32>());
-        SetMinPrice(AHB_ORANGE, fields[10].Get<uint32>());
-        SetMaxPrice(AHB_ORANGE, fields[11].Get<uint32>());
-        SetMinPrice(AHB_YELLOW, fields[12].Get<uint32>());
-        SetMaxPrice(AHB_YELLOW, fields[13].Get<uint32>());
-    }
-    else
-    {
-        LOG_ERROR("module", "Failed to load min and max prices for auctionhouse {}", GetAHID());
-    }
-
-    //
-    // Load min and max bid prices in a single query
-    //
-
-    QueryResult bidPriceResult = WorldDatabase.Query(
-        "SELECT minbidpricegrey, maxbidpricegrey, minbidpricewhite, maxbidpricewhite, "
+        "minpriceyellow, maxpriceyellow, "
+        "minbidpricegrey, maxbidpricegrey, minbidpricewhite, maxbidpricewhite, "
         "minbidpricegreen, maxbidpricegreen, minbidpriceblue, maxbidpriceblue, "
         "minbidpricepurple, maxbidpricepurple, minbidpriceorange, maxbidpriceorange, "
-        "minbidpriceyellow, maxbidpriceyellow FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
-
-    if (bidPriceResult)
-    {
-        Field* fields = bidPriceResult->Fetch();
-        SetMinBidPrice(AHB_GREY, fields[0].Get<uint32>());
-        SetMaxBidPrice(AHB_GREY, fields[1].Get<uint32>());
-        SetMinBidPrice(AHB_WHITE, fields[2].Get<uint32>());
-        SetMaxBidPrice(AHB_WHITE, fields[3].Get<uint32>());
-        SetMinBidPrice(AHB_GREEN, fields[4].Get<uint32>());
-        SetMaxBidPrice(AHB_GREEN, fields[5].Get<uint32>());
-        SetMinBidPrice(AHB_BLUE, fields[6].Get<uint32>());
-        SetMaxBidPrice(AHB_BLUE, fields[7].Get<uint32>());
-        SetMinBidPrice(AHB_PURPLE, fields[8].Get<uint32>());
-        SetMaxBidPrice(AHB_PURPLE, fields[9].Get<uint32>());
-        SetMinBidPrice(AHB_ORANGE, fields[10].Get<uint32>());
-        SetMaxBidPrice(AHB_ORANGE, fields[11].Get<uint32>());
-        SetMinBidPrice(AHB_YELLOW, fields[12].Get<uint32>());
-        SetMaxBidPrice(AHB_YELLOW, fields[13].Get<uint32>());
-    }
-    else
-    {
-        LOG_ERROR("module", "Failed to load min and max bid prices for auctionhouse {}", GetAHID());
-    }
-
-    //
-    // Load max stacks
-    //
-
-    QueryResult maxStackResult = WorldDatabase.Query(
-        "SELECT maxstackgrey, maxstackwhite, maxstackgreen, maxstackblue, "
+        "minbidpriceyellow, maxbidpriceyellow, "
+        "maxstackgrey, maxstackwhite, maxstackgreen, maxstackblue, "
         "maxstackpurple, maxstackorange, maxstackyellow "
         "FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
 
-    if (maxStackResult)
+    if (!databaseValuesResult)
     {
-        Field* fields = maxStackResult->Fetch();
-        SetMaxStack(AHB_GREY, fields[0].Get<uint32>());
-        SetMaxStack(AHB_WHITE, fields[1].Get<uint32>());
-        SetMaxStack(AHB_GREEN, fields[2].Get<uint32>());
-        SetMaxStack(AHB_BLUE, fields[3].Get<uint32>());
-        SetMaxStack(AHB_PURPLE, fields[4].Get<uint32>());
-        SetMaxStack(AHB_ORANGE, fields[5].Get<uint32>());
-        SetMaxStack(AHB_YELLOW, fields[6].Get<uint32>());
+        LOG_ERROR("module", "Failed to load configuration for auctionhouse {}", GetAHID());
+        return; // Exit early if the query fails
     }
-    else
-    {
-        LOG_ERROR("module", "Failed to load max stacks for auctionhouse {}", GetAHID());
-    }
+
+    Field* fields = databaseValuesResult->Fetch();
+
+    // Load percentages
+    uint32 greytg   = fields[0].Get<uint32>();
+    uint32 whitetg  = fields[1].Get<uint32>();
+    uint32 greentg  = fields[2].Get<uint32>();
+    uint32 bluetg   = fields[3].Get<uint32>();
+    uint32 purpletg = fields[4].Get<uint32>();
+    uint32 orangetg = fields[5].Get<uint32>();
+    uint32 yellowtg = fields[6].Get<uint32>();
+
+    uint32 greyi    = fields[7].Get<uint32>();
+    uint32 whitei   = fields[8].Get<uint32>();
+    uint32 greeni   = fields[9].Get<uint32>();
+    uint32 bluei    = fields[10].Get<uint32>();
+    uint32 purplei  = fields[11].Get<uint32>();
+    uint32 orangei  = fields[12].Get<uint32>();
+    uint32 yellowi  = fields[13].Get<uint32>();
+
+    SetPercentages(greytg, whitetg, greentg, bluetg, purpletg, orangetg, yellowtg, greyi, whitei, greeni, bluei, purplei, orangei, yellowi);
+
+    // Load min and max prices
+    SetMinPrice(AHB_GREY, fields[14].Get<uint32>());
+    SetMaxPrice(AHB_GREY, fields[15].Get<uint32>());
+    SetMinPrice(AHB_WHITE, fields[16].Get<uint32>());
+    SetMaxPrice(AHB_WHITE, fields[17].Get<uint32>());
+    SetMinPrice(AHB_GREEN, fields[18].Get<uint32>());
+    SetMaxPrice(AHB_GREEN, fields[19].Get<uint32>());
+    SetMinPrice(AHB_BLUE, fields[20].Get<uint32>());
+    SetMaxPrice(AHB_BLUE, fields[21].Get<uint32>());
+    SetMinPrice(AHB_PURPLE, fields[22].Get<uint32>());
+    SetMaxPrice(AHB_PURPLE, fields[23].Get<uint32>());
+    SetMinPrice(AHB_ORANGE, fields[24].Get<uint32>());
+    SetMaxPrice(AHB_ORANGE, fields[25].Get<uint32>());
+    SetMinPrice(AHB_YELLOW, fields[26].Get<uint32>());
+    SetMaxPrice(AHB_YELLOW, fields[27].Get<uint32>());
+
+    // Load min and max bid prices
+    SetMinBidPrice(AHB_GREY, fields[28].Get<uint32>());
+    SetMaxBidPrice(AHB_GREY, fields[29].Get<uint32>());
+    SetMinBidPrice(AHB_WHITE, fields[30].Get<uint32>());
+    SetMaxBidPrice(AHB_WHITE, fields[31].Get<uint32>());
+    SetMinBidPrice(AHB_GREEN, fields[32].Get<uint32>());
+    SetMaxBidPrice(AHB_GREEN, fields[33].Get<uint32>());
+    SetMinBidPrice(AHB_BLUE, fields[34].Get<uint32>());
+    SetMaxBidPrice(AHB_BLUE, fields[35].Get<uint32>());
+    SetMinBidPrice(AHB_PURPLE, fields[36].Get<uint32>());
+    SetMaxBidPrice(AHB_PURPLE, fields[37].Get<uint32>());
+    SetMinBidPrice(AHB_ORANGE, fields[38].Get<uint32>());
+    SetMaxBidPrice(AHB_ORANGE, fields[39].Get<uint32>());
+    SetMinBidPrice(AHB_YELLOW, fields[40].Get<uint32>());
+    SetMaxBidPrice(AHB_YELLOW, fields[41].Get<uint32>());
+
+    // Load max stacks
+    SetMaxStack(AHB_GREY, fields[42].Get<uint32>());
+    SetMaxStack(AHB_WHITE, fields[43].Get<uint32>());
+    SetMaxStack(AHB_GREEN, fields[44].Get<uint32>());
+    SetMaxStack(AHB_BLUE, fields[45].Get<uint32>());
+    SetMaxStack(AHB_PURPLE, fields[46].Get<uint32>());
+    SetMaxStack(AHB_ORANGE, fields[47].Get<uint32>());
+    SetMaxStack(AHB_YELLOW, fields[48].Get<uint32>());
 
     if (DebugOutConfig)
     {
