@@ -25,61 +25,78 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
 {
     // Retrieve how many bots shall be operating on the auction market
     bool debug = sConfigMgr->GetOption<bool>("AuctionHouseBot.DEBUG", false);
+    bool UsePlayerbotsAsAHBots = sConfigMgr->GetOption<bool>("AuctionHouseBot.UsePlayerbotsAsAHBots", false);
+
     uint32 account = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Account", 0);
 
-    // Retrieve list of GUIDs from the configuration
-    std::string guidsStr = sConfigMgr->GetOption<std::string>("AuctionHouseBot.GUIDs", "");
-    std::vector<uint32> botGUIDs;
-    std::stringstream ss(guidsStr);
-    std::string guid;
-    while (std::getline(ss, guid, ','))
+    // Clear the global bot ID set
+    gBotsId.clear();
+
+    if(UsePlayerbotsAsAHBots)
     {
-        botGUIDs.push_back(std::stoul(guid));
+        std::string playerBotsAccountPrefix = sConfigMgr->GetOption<std::string>("AuctionHouseBot.PlayerBotsAccountPrefix", "RNDBOT");
+
+        // Retrieve list of playerbots GUIDs from the database
+        QueryResult result = LoginDatabase.Query(
+            "SELECT guid FROM characters WHERE account IN (SELECT id FROM account WHERE username LIKE '{}%')",
+            playerBotsAccountPrefix);
+
+        if (result)
+        {
+            do
+            {
+                Field* fields = result->Fetch();
+                uint32 botGuid = fields[0].Get<uint32>();
+                gBotsId.insert(botGuid);
+
+                if (debug)
+                {
+                    LOG_INFO("server.loading", "AHBot: Adding playerbot GUID {}", botGuid);
+                }
+            } while (result->NextRow());
+        }
+        else
+        {
+            LOG_ERROR("server.loading", "AHBot: No playerbots found with prefix '{}'", playerBotsAccountPrefix);
+        }
+
+    }
+    else
+    {
+        // Retrieve list of GUIDs from the configuration
+        std::string guidsStr = sConfigMgr->GetOption<std::string>("AuctionHouseBot.GUIDs", "");
+        std::stringstream ss(guidsStr);
+        std::string guid;
+
+        while (std::getline(ss, guid, ','))
+        {
+            try
+            {
+                uint32 botGuid = std::stoul(guid);
+                gBotsId.insert(botGuid);
+
+                if (debug)
+                {
+                    LOG_INFO("server.loading", "AHBot: Adding bot GUID {}", botGuid);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                LOG_ERROR("server.loading", "AHBot: Invalid GUID '{}' in configuration: {}", guid, e.what());
+            }
+        }
     }
 
-    // All the bots bound to the provided account will be used for auctioning, if GUIDs list is empty.
+    // Validate that we have either an account or bot GUIDs
     if (account == 0 && botGUIDs.empty())
     {
         LOG_ERROR("server.loading", "AHBot: Account id and GUIDs list missing from configuration; is that the right file?");
         return;
     }
 
-    gBotsId.clear();
-
-    if (!botGUIDs.empty())
+    // If no GUIDs were added, fallback to querying all characters of the account
+    if (gBotsId.empty() && account != 0)
     {
-        for (uint32 botId : botGUIDs)
-        {
-            QueryResult result = CharacterDatabase.Query("SELECT guid FROM characters WHERE guid = {} AND account = {}", botId, account);
-
-            if (result)
-            {
-                Field* fields = result->Fetch();
-                uint32 queriedBotId = fields[0].Get<uint32>();
-
-                if (debug)
-                {
-                    LOG_INFO("server.loading", "AHBot: New bot to start, account={} character={}", account, queriedBotId);
-                }
-
-                gBotsId.insert(queriedBotId);
-            }
-            else
-            {
-                LOG_ERROR("server.loading", "AHBot: Could not query the database for character with GUID {} and account {}", botId, account);
-            }
-        }
-    }
-    else
-    {
-        // If no GUIDs are provided, we will use the account ID to fetch all characters
-        // associated with that account.
-        if (debug)
-        {
-            LOG_INFO("server.loading", "AHBot: No GUIDs provided, fetching all characters for account {}", account);
-        }
-
-        // Query the database for all characters associated with the account
         QueryResult result = CharacterDatabase.Query("SELECT guid FROM characters WHERE account = {}", account);
 
         if (result)
@@ -87,15 +104,13 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
             do
             {
                 Field* fields = result->Fetch();
-                uint32 botId = fields[0].Get<uint32>();
+                uint32 botGuid = fields[0].Get<uint32>();
+                gBotsId.insert(botGuid);
 
                 if (debug)
                 {
-                    LOG_INFO("server.loading", "AHBot: New bot to start, account={} character={}", account, botId);
+                    LOG_INFO("server.loading", "AHBot: Adding bot GUID {} from account {}", botGuid, account);
                 }
-
-                gBotsId.insert(botId);
-
             } while (result->NextRow());
         }
         else
@@ -105,10 +120,10 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
         }
     }
 
-
-    if (gBotsId.size() == 0)
+    // Ensure we have at least one bot GUID
+    if (gBotsId.empty())
     {
-        LOG_ERROR("server.loading", "AHBot: no characters registered for account {}", account);
+        LOG_ERROR("server.loading", "AHBot: No characters registered for account {}", account);
         return;
     }
 
