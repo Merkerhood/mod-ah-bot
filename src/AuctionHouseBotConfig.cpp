@@ -2163,23 +2163,37 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     //SetMaxItems(WorldDatabase.Query("SELECT maxitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
 
     // Load percentages
-    uint32 greytg   = WorldDatabase.Query("SELECT percentgreytradegoods   FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 whitetg  = WorldDatabase.Query("SELECT percentwhitetradegoods  FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 greentg  = WorldDatabase.Query("SELECT percentgreentradegoods  FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 bluetg   = WorldDatabase.Query("SELECT percentbluetradegoods   FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 purpletg = WorldDatabase.Query("SELECT percentpurpletradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 orangetg = WorldDatabase.Query("SELECT percentorangetradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 yellowtg = WorldDatabase.Query("SELECT percentyellowtradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
+    QueryResult result = WorldDatabase.Query(
+        "SELECT percentgreytradegoods, percentwhitetradegoods, percentgreentradegoods, percentbluetradegoods, "
+        "percentpurpletradegoods, percentorangetradegoods, percentyellowtradegoods, percentgreyitems, "
+        "percentwhiteitems, percentgreenitems, percentblueitems, percentpurpleitems, percentorangeitems, "
+        "percentyellowitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
 
-    uint32 greyi    = WorldDatabase.Query("SELECT percentgreyitems        FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 whitei   = WorldDatabase.Query("SELECT percentwhiteitems       FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 greeni   = WorldDatabase.Query("SELECT percentgreenitems       FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 bluei    = WorldDatabase.Query("SELECT percentblueitems        FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 purplei  = WorldDatabase.Query("SELECT percentpurpleitems      FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 orangei  = WorldDatabase.Query("SELECT percentorangeitems      FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
-    uint32 yellowi  = WorldDatabase.Query("SELECT percentyellowitems      FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>();
+    if (result)
+    {
+        Field* fields = result->Fetch();
+        uint32 greytg   = fields[0].Get<uint32>();
+        uint32 whitetg  = fields[1].Get<uint32>();
+        uint32 greentg  = fields[2].Get<uint32>();
+        uint32 bluetg   = fields[3].Get<uint32>();
+        uint32 purpletg = fields[4].Get<uint32>();
+        uint32 orangetg = fields[5].Get<uint32>();
+        uint32 yellowtg = fields[6].Get<uint32>();
 
-    SetPercentages(greytg, whitetg, greentg, bluetg, purpletg, orangetg, yellowtg, greyi, whitei, greeni, bluei, purplei, orangei, yellowi);
+        uint32 greyi    = fields[7].Get<uint32>();
+        uint32 whitei   = fields[8].Get<uint32>();
+        uint32 greeni   = fields[9].Get<uint32>();
+        uint32 bluei    = fields[10].Get<uint32>();
+        uint32 purplei  = fields[11].Get<uint32>();
+        uint32 orangei  = fields[12].Get<uint32>();
+        uint32 yellowi  = fields[13].Get<uint32>();
+
+        SetPercentages(greytg, whitetg, greentg, bluetg, purpletg, orangetg, yellowtg, greyi, whitei, greeni, bluei, purplei, orangei, yellowi);
+    }
+    else
+    {
+        LOG_ERROR("module", "Failed to load percentages for auctionhouse {}", GetAHID());
+    }
 
     //
     // Load min and max prices
