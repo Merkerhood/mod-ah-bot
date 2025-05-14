@@ -931,12 +931,11 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         uint64 baseBuyoutPrice = 0;
         uint64 baseBidPrice = 0;
 
-        auto it = config->itemPriceOverrides.find(itemID);
-        if (it != config->itemPriceOverrides.end())
+        auto [avgPrice, minPrice] = config->GetPriceOverrideForItem(itemID);
+        if (avgPrice > 0 || minPrice > 0)
         {
-            // Base prices are loaded from from the price override table in the database
-            baseBuyoutPrice = std::get<0>(it->second);
-            baseBidPrice = std::get<1>(it->second);
+            baseBuyoutPrice = avgPrice;
+            baseBidPrice = minPrice;
         }
         else
         {
