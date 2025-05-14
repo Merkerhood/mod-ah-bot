@@ -3341,37 +3341,37 @@ void AHBConfig::InitializeBins()
             {
             case AHB_GREY:
                 GreyTradeGoodsBin.insert(itr->second.ItemId);
-                GreyTradeGoodsVec.insert(itr->second.ItemId);
+                GreyTradeGoodsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_WHITE:
                 WhiteTradeGoodsBin.insert(itr->second.ItemId);
-                WhiteTradeGoodsVec.insert(itr->second.ItemId);
+                WhiteTradeGoodsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_GREEN:
                 GreenTradeGoodsBin.insert(itr->second.ItemId);
-                GreenTradeGoodsVec.insert(itr->second.ItemId);
+                GreenTradeGoodsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_BLUE:
                 BlueTradeGoodsBin.insert(itr->second.ItemId);
-                BlueTradeGoodsVec.insert(itr->second.ItemId);
+                BlueTradeGoodsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_PURPLE:
                 PurpleTradeGoodsBin.insert(itr->second.ItemId);
-                PurpleTradeGoodsVec.insert(itr->second.ItemId);
+                PurpleTradeGoodsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_ORANGE:
                 OrangeTradeGoodsBin.insert(itr->second.ItemId);
-                OrangeTradeGoodsVec.insert(itr->second.ItemId);
+                OrangeTradeGoodsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_YELLOW:
                 YellowTradeGoodsBin.insert(itr->second.ItemId);
-                YellowTradeGoodsVec.insert(itr->second.ItemId);
+                YellowTradeGoodsVec.push_back(itr->second.ItemId);
                 break;
             }
         }
@@ -3381,37 +3381,37 @@ void AHBConfig::InitializeBins()
             {
             case AHB_GREY:
                 GreyItemsBin.insert(itr->second.ItemId);
-                GreyItemsVec.insert(itr->second.ItemId);
+                GreyItemsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_WHITE:
                 WhiteItemsBin.insert(itr->second.ItemId);
-                WhiteItemsVec.insert(itr->second.ItemId);
+                WhiteItemsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_GREEN:
                 GreenItemsBin.insert(itr->second.ItemId);
-                GreenItemsVec.insert(itr->second.ItemId);
+                GreenItemsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_BLUE:
                 BlueItemsBin.insert(itr->second.ItemId);
-                BlueItemsVec.insert(itr->second.ItemId);
+                BlueItemsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_PURPLE:
                 PurpleItemsBin.insert(itr->second.ItemId);
-                PurpleItemsVec.insert(itr->second.ItemId);
+                PurpleItemsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_ORANGE:
                 OrangeItemsBin.insert(itr->second.ItemId);
-                OrangeItemsVec.insert(itr->second.ItemId);
+                OrangeItemsVec.push_back(itr->second.ItemId);
                 break;
 
             case AHB_YELLOW:
                 YellowItemsBin.insert(itr->second.ItemId);
-                YellowItemsVec.insert(itr->second.ItemId);
+                YellowItemsVec.push_back(itr->second.ItemId);
                 break;
             }
         }
