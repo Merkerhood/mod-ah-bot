@@ -2185,128 +2185,130 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
         LOG_ERROR("module", "Failed to load configuration for auctionhouse {}", GetAHID());
         return; // Exit early if the query fails
     }
-
-    Field* fields = databaseValuesResult->Fetch();
-
-    // Load percentages
-    uint32 greytg   = fields[0].Get<uint32>();
-    uint32 whitetg  = fields[1].Get<uint32>();
-    uint32 greentg  = fields[2].Get<uint32>();
-    uint32 bluetg   = fields[3].Get<uint32>();
-    uint32 purpletg = fields[4].Get<uint32>();
-    uint32 orangetg = fields[5].Get<uint32>();
-    uint32 yellowtg = fields[6].Get<uint32>();
-
-    uint32 greyi    = fields[7].Get<uint32>();
-    uint32 whitei   = fields[8].Get<uint32>();
-    uint32 greeni   = fields[9].Get<uint32>();
-    uint32 bluei    = fields[10].Get<uint32>();
-    uint32 purplei  = fields[11].Get<uint32>();
-    uint32 orangei  = fields[12].Get<uint32>();
-    uint32 yellowi  = fields[13].Get<uint32>();
-
-    SetPercentages(greytg, whitetg, greentg, bluetg, purpletg, orangetg, yellowtg, greyi, whitei, greeni, bluei, purplei, orangei, yellowi);
-
-    // Load min and max prices
-    SetMinPrice(AHB_GREY, fields[14].Get<uint32>());
-    SetMaxPrice(AHB_GREY, fields[15].Get<uint32>());
-    SetMinPrice(AHB_WHITE, fields[16].Get<uint32>());
-    SetMaxPrice(AHB_WHITE, fields[17].Get<uint32>());
-    SetMinPrice(AHB_GREEN, fields[18].Get<uint32>());
-    SetMaxPrice(AHB_GREEN, fields[19].Get<uint32>());
-    SetMinPrice(AHB_BLUE, fields[20].Get<uint32>());
-    SetMaxPrice(AHB_BLUE, fields[21].Get<uint32>());
-    SetMinPrice(AHB_PURPLE, fields[22].Get<uint32>());
-    SetMaxPrice(AHB_PURPLE, fields[23].Get<uint32>());
-    SetMinPrice(AHB_ORANGE, fields[24].Get<uint32>());
-    SetMaxPrice(AHB_ORANGE, fields[25].Get<uint32>());
-    SetMinPrice(AHB_YELLOW, fields[26].Get<uint32>());
-    SetMaxPrice(AHB_YELLOW, fields[27].Get<uint32>());
-
-    // Load min and max bid prices
-    SetMinBidPrice(AHB_GREY, fields[28].Get<uint32>());
-    SetMaxBidPrice(AHB_GREY, fields[29].Get<uint32>());
-    SetMinBidPrice(AHB_WHITE, fields[30].Get<uint32>());
-    SetMaxBidPrice(AHB_WHITE, fields[31].Get<uint32>());
-    SetMinBidPrice(AHB_GREEN, fields[32].Get<uint32>());
-    SetMaxBidPrice(AHB_GREEN, fields[33].Get<uint32>());
-    SetMinBidPrice(AHB_BLUE, fields[34].Get<uint32>());
-    SetMaxBidPrice(AHB_BLUE, fields[35].Get<uint32>());
-    SetMinBidPrice(AHB_PURPLE, fields[36].Get<uint32>());
-    SetMaxBidPrice(AHB_PURPLE, fields[37].Get<uint32>());
-    SetMinBidPrice(AHB_ORANGE, fields[38].Get<uint32>());
-    SetMaxBidPrice(AHB_ORANGE, fields[39].Get<uint32>());
-    SetMinBidPrice(AHB_YELLOW, fields[40].Get<uint32>());
-    SetMaxBidPrice(AHB_YELLOW, fields[41].Get<uint32>());
-
-    // Load max stacks
-    SetMaxStack(AHB_GREY, fields[42].Get<uint32>());
-    SetMaxStack(AHB_WHITE, fields[43].Get<uint32>());
-    SetMaxStack(AHB_GREEN, fields[44].Get<uint32>());
-    SetMaxStack(AHB_BLUE, fields[45].Get<uint32>());
-    SetMaxStack(AHB_PURPLE, fields[46].Get<uint32>());
-    SetMaxStack(AHB_ORANGE, fields[47].Get<uint32>());
-    SetMaxStack(AHB_YELLOW, fields[48].Get<uint32>());
-
-    if (DebugOutConfig)
+    else
     {
-        LOG_INFO("module", "Settings for Auctionhouse {}", GetAHID());
+        Field* fields = databaseValuesResult->Fetch();
 
-        //LOG_INFO("module", "minItems                = {}", GetMinItems());
-        //LOG_INFO("module", "maxItems                = {}", GetMaxItems());
+        // Load percentages
+        uint32 greytg   = fields[0].Get<uint32>();
+        uint32 whitetg  = fields[1].Get<uint32>();
+        uint32 greentg  = fields[2].Get<uint32>();
+        uint32 bluetg   = fields[3].Get<uint32>();
+        uint32 purpletg = fields[4].Get<uint32>();
+        uint32 orangetg = fields[5].Get<uint32>();
+        uint32 yellowtg = fields[6].Get<uint32>();
 
-        LOG_INFO("module", "percentGreyTradeGoods   = {}", GetPercentages(AHB_GREY_TG));
-        LOG_INFO("module", "percentWhiteTradeGoods  = {}", GetPercentages(AHB_WHITE_TG));
-        LOG_INFO("module", "percentGreenTradeGoods  = {}", GetPercentages(AHB_GREEN_TG));
-        LOG_INFO("module", "percentBlueTradeGoods   = {}", GetPercentages(AHB_BLUE_TG));
-        LOG_INFO("module", "percentPurpleTradeGoods = {}", GetPercentages(AHB_PURPLE_TG));
-        LOG_INFO("module", "percentOrangeTradeGoods = {}", GetPercentages(AHB_ORANGE_TG));
-        LOG_INFO("module", "percentYellowTradeGoods = {}", GetPercentages(AHB_YELLOW_TG));
-        LOG_INFO("module", "percentGreyItems        = {}", GetPercentages(AHB_GREY_I));
-        LOG_INFO("module", "percentWhiteItems       = {}", GetPercentages(AHB_WHITE_I));
-        LOG_INFO("module", "percentGreenItems       = {}", GetPercentages(AHB_GREEN_I));
-        LOG_INFO("module", "percentBlueItems        = {}", GetPercentages(AHB_BLUE_I));
-        LOG_INFO("module", "percentPurpleItems      = {}", GetPercentages(AHB_PURPLE_I));
-        LOG_INFO("module", "percentOrangeItems      = {}", GetPercentages(AHB_ORANGE_I));
-        LOG_INFO("module", "percentYellowItems      = {}", GetPercentages(AHB_YELLOW_I));
+        uint32 greyi    = fields[7].Get<uint32>();
+        uint32 whitei   = fields[8].Get<uint32>();
+        uint32 greeni   = fields[9].Get<uint32>();
+        uint32 bluei    = fields[10].Get<uint32>();
+        uint32 purplei  = fields[11].Get<uint32>();
+        uint32 orangei  = fields[12].Get<uint32>();
+        uint32 yellowi  = fields[13].Get<uint32>();
 
-        LOG_INFO("module", "minPriceGrey            = {}", GetMinPrice(AHB_GREY));
-        LOG_INFO("module", "maxPriceGrey            = {}", GetMaxPrice(AHB_GREY));
-        LOG_INFO("module", "minPriceWhite           = {}", GetMinPrice(AHB_WHITE));
-        LOG_INFO("module", "maxPriceWhite           = {}", GetMaxPrice(AHB_WHITE));
-        LOG_INFO("module", "minPriceGreen           = {}", GetMinPrice(AHB_GREEN));
-        LOG_INFO("module", "maxPriceGreen           = {}", GetMaxPrice(AHB_GREEN));
-        LOG_INFO("module", "minPriceBlue            = {}", GetMinPrice(AHB_BLUE));
-        LOG_INFO("module", "maxPriceBlue            = {}", GetMaxPrice(AHB_BLUE));
-        LOG_INFO("module", "minPricePurple          = {}", GetMinPrice(AHB_PURPLE));
-        LOG_INFO("module", "maxPricePurple          = {}", GetMaxPrice(AHB_PURPLE));
-        LOG_INFO("module", "minPriceOrange          = {}", GetMinPrice(AHB_ORANGE));
-        LOG_INFO("module", "maxPriceOrange          = {}", GetMaxPrice(AHB_ORANGE));
-        LOG_INFO("module", "minPriceYellow          = {}", GetMinPrice(AHB_YELLOW));
-        LOG_INFO("module", "maxPriceYellow          = {}", GetMaxPrice(AHB_YELLOW));
+        SetPercentages(greytg, whitetg, greentg, bluetg, purpletg, orangetg, yellowtg, greyi, whitei, greeni, bluei, purplei, orangei, yellowi);
 
-        LOG_INFO("module", "minBidPriceGrey         = {}", GetMinBidPrice(AHB_GREY));
-        LOG_INFO("module", "maxBidPriceGrey         = {}", GetMaxBidPrice(AHB_GREY));
-        LOG_INFO("module", "minBidPriceWhite        = {}", GetMinBidPrice(AHB_WHITE));
-        LOG_INFO("module", "maxBidPriceWhite        = {}", GetMaxBidPrice(AHB_WHITE));
-        LOG_INFO("module", "minBidPriceGreen        = {}", GetMinBidPrice(AHB_GREEN));
-        LOG_INFO("module", "maxBidPriceGreen        = {}", GetMaxBidPrice(AHB_GREEN));
-        LOG_INFO("module", "minBidPriceBlue         = {}", GetMinBidPrice(AHB_BLUE));
-        LOG_INFO("module", "maxBidPriceBlue         = {}", GetMinBidPrice(AHB_BLUE));
-        LOG_INFO("module", "minBidPricePurple       = {}", GetMinBidPrice(AHB_PURPLE));
-        LOG_INFO("module", "maxBidPricePurple       = {}", GetMaxBidPrice(AHB_PURPLE));
-        LOG_INFO("module", "minBidPriceOrange       = {}", GetMinBidPrice(AHB_ORANGE));
-        LOG_INFO("module", "maxBidPriceOrange       = {}", GetMaxBidPrice(AHB_ORANGE));
-        LOG_INFO("module", "minBidPriceYellow       = {}", GetMinBidPrice(AHB_YELLOW));
-        LOG_INFO("module", "maxBidPriceYellow       = {}", GetMaxBidPrice(AHB_YELLOW));
+        // Load min and max prices
+        SetMinPrice(AHB_GREY, fields[14].Get<uint32>());
+        SetMaxPrice(AHB_GREY, fields[15].Get<uint32>());
+        SetMinPrice(AHB_WHITE, fields[16].Get<uint32>());
+        SetMaxPrice(AHB_WHITE, fields[17].Get<uint32>());
+        SetMinPrice(AHB_GREEN, fields[18].Get<uint32>());
+        SetMaxPrice(AHB_GREEN, fields[19].Get<uint32>());
+        SetMinPrice(AHB_BLUE, fields[20].Get<uint32>());
+        SetMaxPrice(AHB_BLUE, fields[21].Get<uint32>());
+        SetMinPrice(AHB_PURPLE, fields[22].Get<uint32>());
+        SetMaxPrice(AHB_PURPLE, fields[23].Get<uint32>());
+        SetMinPrice(AHB_ORANGE, fields[24].Get<uint32>());
+        SetMaxPrice(AHB_ORANGE, fields[25].Get<uint32>());
+        SetMinPrice(AHB_YELLOW, fields[26].Get<uint32>());
+        SetMaxPrice(AHB_YELLOW, fields[27].Get<uint32>());
 
-        LOG_INFO("module", "maxStackGrey            = {}", GetMaxStack(AHB_GREY));
-        LOG_INFO("module", "maxStackWhite           = {}", GetMaxStack(AHB_WHITE));
-        LOG_INFO("module", "maxStackGreen           = {}", GetMaxStack(AHB_GREEN));
-        LOG_INFO("module", "maxStackBlue            = {}", GetMaxStack(AHB_BLUE));
-        LOG_INFO("module", "maxStackPurple          = {}", GetMaxStack(AHB_PURPLE));
-        LOG_INFO("module", "maxStackOrange          = {}", GetMaxStack(AHB_ORANGE));
-        LOG_INFO("module", "maxStackYellow          = {}", GetMaxStack(AHB_YELLOW));
+        // Load min and max bid prices
+        SetMinBidPrice(AHB_GREY, fields[28].Get<uint32>());
+        SetMaxBidPrice(AHB_GREY, fields[29].Get<uint32>());
+        SetMinBidPrice(AHB_WHITE, fields[30].Get<uint32>());
+        SetMaxBidPrice(AHB_WHITE, fields[31].Get<uint32>());
+        SetMinBidPrice(AHB_GREEN, fields[32].Get<uint32>());
+        SetMaxBidPrice(AHB_GREEN, fields[33].Get<uint32>());
+        SetMinBidPrice(AHB_BLUE, fields[34].Get<uint32>());
+        SetMaxBidPrice(AHB_BLUE, fields[35].Get<uint32>());
+        SetMinBidPrice(AHB_PURPLE, fields[36].Get<uint32>());
+        SetMaxBidPrice(AHB_PURPLE, fields[37].Get<uint32>());
+        SetMinBidPrice(AHB_ORANGE, fields[38].Get<uint32>());
+        SetMaxBidPrice(AHB_ORANGE, fields[39].Get<uint32>());
+        SetMinBidPrice(AHB_YELLOW, fields[40].Get<uint32>());
+        SetMaxBidPrice(AHB_YELLOW, fields[41].Get<uint32>());
+
+        // Load max stacks
+        SetMaxStack(AHB_GREY, fields[42].Get<uint32>());
+        SetMaxStack(AHB_WHITE, fields[43].Get<uint32>());
+        SetMaxStack(AHB_GREEN, fields[44].Get<uint32>());
+        SetMaxStack(AHB_BLUE, fields[45].Get<uint32>());
+        SetMaxStack(AHB_PURPLE, fields[46].Get<uint32>());
+        SetMaxStack(AHB_ORANGE, fields[47].Get<uint32>());
+        SetMaxStack(AHB_YELLOW, fields[48].Get<uint32>());
+
+        if (DebugOutConfig)
+        {
+            LOG_INFO("module", "Settings for Auctionhouse {}", GetAHID());
+
+            //LOG_INFO("module", "minItems                = {}", GetMinItems());
+            //LOG_INFO("module", "maxItems                = {}", GetMaxItems());
+
+            LOG_INFO("module", "percentGreyTradeGoods   = {}", greytg);
+            LOG_INFO("module", "percentWhiteTradeGoods  = {}", whitetg);
+            LOG_INFO("module", "percentGreenTradeGoods  = {}", greentg);
+            LOG_INFO("module", "percentBlueTradeGoods   = {}", bluetg);
+            LOG_INFO("module", "percentPurpleTradeGoods = {}", purpletg);
+            LOG_INFO("module", "percentOrangeTradeGoods = {}", orangetg);
+            LOG_INFO("module", "percentYellowTradeGoods = {}", yellowtg);
+            LOG_INFO("module", "percentGreyItems        = {}", greyi);
+            LOG_INFO("module", "percentWhiteItems       = {}", whitei);
+            LOG_INFO("module", "percentGreenItems       = {}", greeni);
+            LOG_INFO("module", "percentBlueItems        = {}", bluei);
+            LOG_INFO("module", "percentPurpleItems      = {}", purplei);
+            LOG_INFO("module", "percentOrangeItems      = {}", orangei);
+            LOG_INFO("module", "percentYellowItems      = {}", yellowi);
+
+            LOG_INFO("module", "minPriceGrey            = {}", GetMinPrice(AHB_GREY));
+            LOG_INFO("module", "maxPriceGrey            = {}", GetMaxPrice(AHB_GREY));
+            LOG_INFO("module", "minPriceWhite           = {}", GetMinPrice(AHB_WHITE));
+            LOG_INFO("module", "maxPriceWhite           = {}", GetMaxPrice(AHB_WHITE));
+            LOG_INFO("module", "minPriceGreen           = {}", GetMinPrice(AHB_GREEN));
+            LOG_INFO("module", "maxPriceGreen           = {}", GetMaxPrice(AHB_GREEN));
+            LOG_INFO("module", "minPriceBlue            = {}", GetMinPrice(AHB_BLUE));
+            LOG_INFO("module", "maxPriceBlue            = {}", GetMaxPrice(AHB_BLUE));
+            LOG_INFO("module", "minPricePurple          = {}", GetMinPrice(AHB_PURPLE));
+            LOG_INFO("module", "maxPricePurple          = {}", GetMaxPrice(AHB_PURPLE));
+            LOG_INFO("module", "minPriceOrange          = {}", GetMinPrice(AHB_ORANGE));
+            LOG_INFO("module", "maxPriceOrange          = {}", GetMaxPrice(AHB_ORANGE));
+            LOG_INFO("module", "minPriceYellow          = {}", GetMinPrice(AHB_YELLOW));
+            LOG_INFO("module", "maxPriceYellow          = {}", GetMaxPrice(AHB_YELLOW));
+
+            LOG_INFO("module", "minBidPriceGrey         = {}", GetMinBidPrice(AHB_GREY));
+            LOG_INFO("module", "maxBidPriceGrey         = {}", GetMaxBidPrice(AHB_GREY));
+            LOG_INFO("module", "minBidPriceWhite        = {}", GetMinBidPrice(AHB_WHITE));
+            LOG_INFO("module", "maxBidPriceWhite        = {}", GetMaxBidPrice(AHB_WHITE));
+            LOG_INFO("module", "minBidPriceGreen        = {}", GetMinBidPrice(AHB_GREEN));
+            LOG_INFO("module", "maxBidPriceGreen        = {}", GetMaxBidPrice(AHB_GREEN));
+            LOG_INFO("module", "minBidPriceBlue         = {}", GetMinBidPrice(AHB_BLUE));
+            LOG_INFO("module", "maxBidPriceBlue         = {}", GetMinBidPrice(AHB_BLUE));
+            LOG_INFO("module", "minBidPricePurple       = {}", GetMinBidPrice(AHB_PURPLE));
+            LOG_INFO("module", "maxBidPricePurple       = {}", GetMaxBidPrice(AHB_PURPLE));
+            LOG_INFO("module", "minBidPriceOrange       = {}", GetMinBidPrice(AHB_ORANGE));
+            LOG_INFO("module", "maxBidPriceOrange       = {}", GetMaxBidPrice(AHB_ORANGE));
+            LOG_INFO("module", "minBidPriceYellow       = {}", GetMinBidPrice(AHB_YELLOW));
+            LOG_INFO("module", "maxBidPriceYellow       = {}", GetMaxBidPrice(AHB_YELLOW));
+
+            LOG_INFO("module", "maxStackGrey            = {}", GetMaxStack(AHB_GREY));
+            LOG_INFO("module", "maxStackWhite           = {}", GetMaxStack(AHB_WHITE));
+            LOG_INFO("module", "maxStackGreen           = {}", GetMaxStack(AHB_GREEN));
+            LOG_INFO("module", "maxStackBlue            = {}", GetMaxStack(AHB_BLUE));
+            LOG_INFO("module", "maxStackPurple          = {}", GetMaxStack(AHB_PURPLE));
+            LOG_INFO("module", "maxStackOrange          = {}", GetMaxStack(AHB_ORANGE));
+            LOG_INFO("module", "maxStackYellow          = {}", GetMaxStack(AHB_YELLOW));
+        }
     }
 
     //
@@ -2435,38 +2437,65 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
                 }
             }
         }
-    }
 
-    if (DebugOutConfig)
-    {
-        LOG_INFO("module", "Current situation for the auctionhouse {}", GetAHID());
-        LOG_INFO("module", "    Grey   Trade Goods {}", GetItemCounts(AHB_GREY_TG));
-        LOG_INFO("module", "    White  Trade Goods {}", GetItemCounts(AHB_WHITE_TG));
-        LOG_INFO("module", "    Green  Trade Goods {}", GetItemCounts(AHB_GREEN_TG));
-        LOG_INFO("module", "    Blue   Trade Goods {}", GetItemCounts(AHB_BLUE_TG));
-        LOG_INFO("module", "    Purple Trade Goods {}", GetItemCounts(AHB_PURPLE_TG));
-        LOG_INFO("module", "    Orange Trade Goods {}", GetItemCounts(AHB_ORANGE_TG));
-        LOG_INFO("module", "    Yellow Trade Goods {}", GetItemCounts(AHB_YELLOW_TG));
-        LOG_INFO("module", "    Grey   Items       {}", GetItemCounts(AHB_GREY_I));
-        LOG_INFO("module", "    White  Items       {}", GetItemCounts(AHB_WHITE_I));
-        LOG_INFO("module", "    Green  Items       {}", GetItemCounts(AHB_GREEN_I));
-        LOG_INFO("module", "    Blue   Items       {}", GetItemCounts(AHB_BLUE_I));
-        LOG_INFO("module", "    Purple Items       {}", GetItemCounts(AHB_PURPLE_I));
-        LOG_INFO("module", "    Orange Items       {}", GetItemCounts(AHB_ORANGE_I));
-        LOG_INFO("module", "    Yellow Items       {}", GetItemCounts(AHB_YELLOW_I));
+        if (DebugOutConfig)
+        {
+            LOG_INFO("module", "Current situation for the auctionhouse {}", GetAHID());
+            LOG_INFO("module", "    Grey   Trade Goods {}", GetItemCounts(AHB_GREY_TG));
+            LOG_INFO("module", "    White  Trade Goods {}", GetItemCounts(AHB_WHITE_TG));
+            LOG_INFO("module", "    Green  Trade Goods {}", GetItemCounts(AHB_GREEN_TG));
+            LOG_INFO("module", "    Blue   Trade Goods {}", GetItemCounts(AHB_BLUE_TG));
+            LOG_INFO("module", "    Purple Trade Goods {}", GetItemCounts(AHB_PURPLE_TG));
+            LOG_INFO("module", "    Orange Trade Goods {}", GetItemCounts(AHB_ORANGE_TG));
+            LOG_INFO("module", "    Yellow Trade Goods {}", GetItemCounts(AHB_YELLOW_TG));
+            LOG_INFO("module", "    Grey   Items       {}", GetItemCounts(AHB_GREY_I));
+            LOG_INFO("module", "    White  Items       {}", GetItemCounts(AHB_WHITE_I));
+            LOG_INFO("module", "    Green  Items       {}", GetItemCounts(AHB_GREEN_I));
+            LOG_INFO("module", "    Blue   Items       {}", GetItemCounts(AHB_BLUE_I));
+            LOG_INFO("module", "    Purple Items       {}", GetItemCounts(AHB_PURPLE_I));
+            LOG_INFO("module", "    Orange Items       {}", GetItemCounts(AHB_ORANGE_I));
+            LOG_INFO("module", "    Yellow Items       {}", GetItemCounts(AHB_YELLOW_I));
+        }
     }
 
     //
     // Auctions buyer
     //
 
-    SetBuyerPrice(AHB_GREY  , WorldDatabase.Query("SELECT buyerpricegrey   FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    SetBuyerPrice(AHB_WHITE , WorldDatabase.Query("SELECT buyerpricewhite  FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    SetBuyerPrice(AHB_GREEN , WorldDatabase.Query("SELECT buyerpricegreen  FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    SetBuyerPrice(AHB_BLUE  , WorldDatabase.Query("SELECT buyerpriceblue   FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    SetBuyerPrice(AHB_PURPLE, WorldDatabase.Query("SELECT buyerpricepurple FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    SetBuyerPrice(AHB_ORANGE, WorldDatabase.Query("SELECT buyerpriceorange FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    SetBuyerPrice(AHB_YELLOW, WorldDatabase.Query("SELECT buyerpriceyellow FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
+    QueryResult buyerPricesResult = WorldDatabase.Query(
+        "SELECT buyerpricegrey, buyerpricewhite, buyerpricegreen, buyerpriceblue, "
+        "buyerpricepurple, buyerpriceorange, buyerpriceyellow "
+        "FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID());
+
+    if (buyerPricesResult)
+    {
+        Field* fields = buyerPricesResult->Fetch();
+        SetBuyerPrice(AHB_GREY  , fields[0].Get<uint32>());
+        SetBuyerPrice(AHB_WHITE , fields[1].Get<uint32>());
+        SetBuyerPrice(AHB_GREEN , fields[2].Get<uint32>());
+        SetBuyerPrice(AHB_BLUE  , fields[3].Get<uint32>());
+        SetBuyerPrice(AHB_PURPLE, fields[4].Get<uint32>());
+        SetBuyerPrice(AHB_ORANGE, fields[5].Get<uint32>());
+        SetBuyerPrice(AHB_YELLOW, fields[6].Get<uint32>());
+
+        if (DebugOutConfig)
+        {
+            LOG_INFO("module", "Current Settings for Auctionhouse {} buyer", GetAHID());
+            LOG_INFO("module", "buyerPriceGrey          = {}", GetBuyerPrice(AHB_GREY));
+            LOG_INFO("module", "buyerPriceWhite         = {}", GetBuyerPrice(AHB_WHITE));
+            LOG_INFO("module", "buyerPriceGreen         = {}", GetBuyerPrice(AHB_GREEN));
+            LOG_INFO("module", "buyerPriceBlue          = {}", GetBuyerPrice(AHB_BLUE));
+            LOG_INFO("module", "buyerPricePurple        = {}", GetBuyerPrice(AHB_PURPLE));
+            LOG_INFO("module", "buyerPriceOrange        = {}", GetBuyerPrice(AHB_ORANGE));
+            LOG_INFO("module", "buyerPriceYellow        = {}", GetBuyerPrice(AHB_YELLOW));
+            //LOG_INFO("module", "buyerBiddingInterval    = {}", GetBiddingInterval());
+            //LOG_INFO("module", "buyerBidsPerInterval    = {}", GetBidsPerInterval());
+        }
+    }
+    else
+    {
+        LOG_ERROR("module", "Failed to load buyer prices for auctionhouse {}", GetAHID());
+    }
 
     //
     // Load bidding interval
@@ -2481,19 +2510,7 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     //SetBidsPerInterval(WorldDatabase.Query("SELECT buyerbidsperinterval FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
     //disabled as we load from file now
 
-    if (DebugOutConfig)
-    {
-        LOG_INFO("module", "Current Settings for Auctionhouse {} buyer", GetAHID());
-        LOG_INFO("module", "buyerPriceGrey          = {}", GetBuyerPrice(AHB_GREY));
-        LOG_INFO("module", "buyerPriceWhite         = {}", GetBuyerPrice(AHB_WHITE));
-        LOG_INFO("module", "buyerPriceGreen         = {}", GetBuyerPrice(AHB_GREEN));
-        LOG_INFO("module", "buyerPriceBlue          = {}", GetBuyerPrice(AHB_BLUE));
-        LOG_INFO("module", "buyerPricePurple        = {}", GetBuyerPrice(AHB_PURPLE));
-        LOG_INFO("module", "buyerPriceOrange        = {}", GetBuyerPrice(AHB_ORANGE));
-        LOG_INFO("module", "buyerPriceYellow        = {}", GetBuyerPrice(AHB_YELLOW));
-        //LOG_INFO("module", "buyerBiddingInterval    = {}", GetBiddingInterval());
-        //LOG_INFO("module", "buyerBidsPerInterval    = {}", GetBidsPerInterval());
-    }
+
 
     //
     // Reload the list of disabled items
