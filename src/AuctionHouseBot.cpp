@@ -1070,7 +1070,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         if (config->DebugOutSeller){
             auto TransactionEnd = std::chrono::high_resolution_clock::now();
-            auto TransactionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(getPriceOverrideEnd - TransactionStart).count();
+            auto TransactionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(TransactionEnd - TransactionStart).count();
             LOG_INFO("module", "AHBot [{}]: transaction took {} ms to execute", _id, TransactionDuration);
         }
 
