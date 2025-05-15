@@ -956,7 +956,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         if (config->DebugOutSeller){
             auto getPriceOverrideEnd = std::chrono::high_resolution_clock::now();
             auto getPriceOverrideDuration = std::chrono::duration_cast<std::chrono::milliseconds>(getPriceOverrideEnd - getPriceOverrideStart).count();
-            LOG_INFO("module", "AHBot [{}]: while loop execution round {} took {} ms to execute", loopbreaker, _id, getPriceOverrideDuration);
+            LOG_INFO("module", "AHBot [{}]: priceoverride took {} ms to execute", _id, getPriceOverrideDuration);
         }
 
         if (avgPrice > 0 || minPrice > 0)
