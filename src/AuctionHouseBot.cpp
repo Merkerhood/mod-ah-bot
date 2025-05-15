@@ -879,7 +879,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
             if (config->DebugOutSeller){
                 auto whileItemSelectEnd = std::chrono::high_resolution_clock::now();
                 auto whileItemSelectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(whileItemSelectEnd - whileItemSelectStart).count();
-                LOG_INFO("module", "AHBot [{}]: while loop execution round {} took {} ms to execute", loopbreaker, _id, whileItemSelectDuration);
+                LOG_INFO("module", "AHBot [{}]: while loop execution round {} took {} ms to execute", _id, loopbreaker, whileItemSelectDuration);
             }
 
         }
