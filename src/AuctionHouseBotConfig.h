@@ -266,6 +266,15 @@ public:
     std::set<uint32> OrangeTradeGoodsBin;
     std::set<uint32> YellowTradeGoodsBin;
 
+    // Vectors for trade goods.
+    std::vector<uint32> GreyTradeGoodsVec;
+    std::vector<uint32> WhiteTradeGoodsVec;
+    std::vector<uint32> GreenTradeGoodsVec;
+    std::vector<uint32> BlueTradeGoodsVec;
+    std::vector<uint32> PurpleTradeGoodsVec;
+    std::vector<uint32> OrangeTradeGoodsVec;
+    std::vector<uint32> YellowTradeGoodsVec;
+
     // Bins for items
     std::set<uint32> GreyItemsBin;
     std::set<uint32> WhiteItemsBin;
@@ -274,6 +283,15 @@ public:
     std::set<uint32> PurpleItemsBin;
     std::set<uint32> OrangeItemsBin;
     std::set<uint32> YellowItemsBin;
+
+    // Vectors for items
+    std::vector<uint32> GreyItemsVec;
+    std::vector<uint32> WhiteItemsVec;
+    std::vector<uint32> GreenItemsVec;
+    std::vector<uint32> BlueItemsVec;
+    std::vector<uint32> PurpleItemsVec;
+    std::vector<uint32> OrangeItemsVec;
+    std::vector<uint32> YellowItemsVec;
 
     // Price Override
     std::unordered_map<uint32, std::tuple<uint64, uint64>> itemPriceOverrides;

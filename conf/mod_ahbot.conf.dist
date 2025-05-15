@@ -115,7 +115,10 @@ AuctionHouseBot.UseMarketPriceForSeller = 0
 AuctionHouseBot.MarketResetThreshold = 25
 AuctionHouseBot.Account = 0
 AuctionHouseBot.GUIDs = 0
+
+# Number of auctions to create each cycle (each minute) in total per auctionhouse
 AuctionHouseBot.ItemsPerCycle = 200
+
 AuctionHouseBot.ConsiderOnlyBotAuctions = 0
 AuctionHouseBot.DuplicatesCount = 0
 AuctionHouseBot.DivisibleStacks = 0
