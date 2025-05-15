@@ -772,11 +772,10 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         // Select, in rarity order, a new random item
         //
 
+        auto whileItemSelectStart = std::chrono::high_resolution_clock::now();
+
         while (itemID == 0 && loopbreaker <= AUCTION_HOUSE_BOT_LOOP_BREAKER)
         {
-
-            auto whileItemSelectStart = std::chrono::high_resolution_clock::now();
-
             loopbreaker++;
 
             // Poor
@@ -876,12 +875,11 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
                 itemID = getElement(config->YellowTradeGoodsVec, urand(0, config->YellowTradeGoodsVec.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            if (config->DebugOutSeller){
-                auto whileItemSelectEnd = std::chrono::high_resolution_clock::now();
-                auto whileItemSelectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(whileItemSelectEnd - whileItemSelectStart).count();
-                LOG_INFO("module", "AHBot [{}]: while loop execution round {} took {} ms to execute", _id, loopbreaker, whileItemSelectDuration);
-            }
-
+        }
+        if (config->DebugOutSeller){
+            auto whileItemSelectEnd = std::chrono::high_resolution_clock::now();
+            auto whileItemSelectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(whileItemSelectEnd - whileItemSelectStart).count();
+            LOG_INFO("module", "AHBot [{}]: while loop execution took {} ms to execute", _id, whileItemSelectDuration);
         }
 
         if (itemID == 0)
