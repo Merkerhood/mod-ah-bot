@@ -588,10 +588,8 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         return;
     }
 
-    if (config->DebugOutSeller)
-    {
-        auto binEmptyCheckStart = std::chrono::high_resolution_clock::now();
-    }
+    auto binEmptyCheckStart = std::chrono::high_resolution_clock::now();
+
     // Check if all bins are empty and exit early
     if (config->GreyItemsVec.empty() && config->WhiteItemsVec.empty() &&
         config->GreenItemsVec.empty() && config->BlueItemsVec.empty() &&
@@ -657,10 +655,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
     bool   aboveMax=false;
 
-    if (config->DebugOutSeller)
-    {
-        auto getNofAuctionsStart = std::chrono::high_resolution_clock::now();
-    }
+    auto getNofAuctionsStart = std::chrono::high_resolution_clock::now();
 
     uint32 nbOfAuctions = getNofAuctions(config, auctionHouse, AHBplayer->GetGUID());
 
@@ -780,10 +775,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         while (itemID == 0 && loopbreaker <= AUCTION_HOUSE_BOT_LOOP_BREAKER)
         {
 
-            if (config->DebugOutSeller)
-            {
-                auto whileItemSelectStart = std::chrono::high_resolution_clock::now();
-            }
+            auto whileItemSelectStart = std::chrono::high_resolution_clock::now();
 
             loopbreaker++;
 
@@ -957,9 +949,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         uint64 baseBuyoutPrice = 0;
         uint64 baseBidPrice = 0;
 
-        if (config->DebugOutSeller){
-            auto getPriceOverrideStart = std::chrono::high_resolution_clock::now();
-        }
+        auto getPriceOverrideStart = std::chrono::high_resolution_clock::now();
 
         auto [avgPrice, minPrice] = config->GetPriceOverrideForItem(itemID);
 
@@ -1051,9 +1041,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         uint32 deposit = sAuctionMgr->GetAuctionDeposit(ahEntry, elapsingTime, item, stackCount);
 
-         if (config->DebugOutSeller){
-            auto TransactionStart = std::chrono::high_resolution_clock::now();
-        }
+        auto TransactionStart = std::chrono::high_resolution_clock::now();
 
         // Perform the auction
         auto trans = CharacterDatabase.BeginTransaction();
