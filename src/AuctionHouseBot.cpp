@@ -636,6 +636,13 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         }
     }
 
+    // Check if the item is already in the auction house
+    std::unordered_set<uint32> itemsInAH;
+    for (auto itr = auctionHouse->GetAuctionsBegin(); itr != auctionHouse->GetAuctionsEnd(); ++itr)
+    {
+        itemsInAH.insert(itr->second->item_template);
+    }
+
     // don't mess with the AH update let server do it.
     //auctionHouseObject->Update();
 
@@ -732,7 +739,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     std::vector<uint32> itemCounts(14, 0);
 
     // Get prioritized item IDs
-    std::vector<uint32> itemsToSell = GetItemsToSell(config, AHBplayer->GetGUID());
+    std::vector<uint32> itemsToSell = GetItemsToSell(config, AHBplayer->GetGUID(), itemsInAH);
 
     // Loop variables
     uint32 nbSold    = 0; // Tracing counter
@@ -1157,7 +1164,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 // Get Prioritized ItemIDs
 // =============================================================================
 
-std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGuid botGuid)
+std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGuid botGuid, const std::unordered_set<uint32>& itemsInAH)
 {
     //std::vector<uint32> prioritizedItemIDs;
     std::vector<uint32> allItemIDs;
@@ -1179,7 +1186,7 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
     auto addItems = [&](const std::vector<uint32>& itemsBin, bool checkAuctionHouse) {
         for (auto const& itemID : itemsBin)
         {
-            if (!checkAuctionHouse || !IsItemInAuctionHouse(itemID, config->GetAHID()))
+            if (!checkAuctionHouse || itemsInAH.find(itemID) == itemsInAH.end())
             {
                 tempItemIDs.push_back(itemID);
             }
@@ -1200,7 +1207,7 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
     std::vector<uint32> itemsWithOverridesNotListed;
     for (const auto& [itemID, _] : config->itemPriceOverrides)
     {
-        if (!IsItemInAuctionHouse(itemID, config->GetAHID()))
+        if (itemsInAH.find(itemID) == itemsInAH.end())
         {
             itemsWithOverridesNotListed.push_back(itemID);
         }
