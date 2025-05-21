@@ -56,10 +56,6 @@ private:
     AHBConfig* _hordeConfig;
     AHBConfig* _neutralConfig;
 
-    time_t     _lastrun_a_sec_Sell;
-    time_t     _lastrun_h_sec_Sell;
-    time_t     _lastrun_n_sec_Sell;
-
     time_t     _lastrun_a_sec_Buy;
     time_t     _lastrun_h_sec_Buy;
     time_t     _lastrun_n_sec_Buy;
@@ -78,7 +74,8 @@ private:
     uint32 getNofAuctions(AHBConfig* config, AuctionHouseObject* auctionHouse, ObjectGuid guid);
     uint32 getStackCount(AHBConfig* config, uint32 max);
     uint32 getElapsedTime(uint32 timeClass);
-    uint32 getElement(std::set<uint32> set, int index, uint32 botId, uint32 maxDup, AuctionHouseObject* auctionHouse);
+    uint32 getElement(const std::vector<uint32>& vec, int index, uint32 botId, uint32 maxDup, std::unordered_map<uint32, uint32>& botItemCounts);
+
     uint32 getTotalAuctions(AHBConfig* config, AuctionHouseObject* auctionHouse);
 
     // Helper function to calculate the median
@@ -104,7 +101,7 @@ public:
 
     ObjectGuid::LowType GetAHBplayerGUID() { return _id; };
 
-    std::vector<uint32> GetItemsToSell(AHBConfig* config, ObjectGuid botGuid);
+    std::vector<uint32> GetItemsToSell(AHBConfig* config, ObjectGuid botGuid, const std::unordered_set<uint32>& itemsInAH);
     bool IsItemListedByBot(uint32 itemID, uint32 ahID, ObjectGuid botGuid);
     bool IsItemInAuctionHouse(uint32 itemID, uint32 ahID);
     std::vector<uint32> GetAllItemIDs(uint32 ahID);

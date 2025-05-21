@@ -43,61 +43,68 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
         LOG_ERROR("server.loading", "AHBot: Account id and GUIDs list missing from configuration; is that the right file?");
         return;
     }
-    else
+
+    gBotsId.clear();
+
+    if (!botGUIDs.empty())
     {
-        gBotsId.clear();
-
-        if (!botGUIDs.empty())
+        for (uint32 botId : botGUIDs)
         {
-            for (uint32 botId : botGUIDs)
-            {
-                QueryResult result = CharacterDatabase.Query("SELECT guid FROM characters WHERE guid = {} AND account = {}", botId, account);
-
-                if (result)
-                {
-                    Field* fields = result->Fetch();
-                    uint32 queriedBotId = fields[0].Get<uint32>();
-
-                    if (debug)
-                    {
-                        LOG_INFO("server.loading", "AHBot: New bot to start, account={} character={}", account, queriedBotId);
-                    }
-
-                    gBotsId.insert(queriedBotId);
-                }
-                else
-                {
-                    LOG_ERROR("server.loading", "AHBot: Could not query the database for character with GUID {} and account {}", botId, account);
-                }
-            }
-        }
-        else
-        {
-            QueryResult result = CharacterDatabase.Query("SELECT guid FROM characters WHERE account = {}", account);
+            QueryResult result = CharacterDatabase.Query("SELECT guid FROM characters WHERE guid = {} AND account = {}", botId, account);
 
             if (result)
             {
-                do
+                Field* fields = result->Fetch();
+                uint32 queriedBotId = fields[0].Get<uint32>();
+
+                if (debug)
                 {
-                    Field* fields = result->Fetch();
-                    uint32 botId = fields[0].Get<uint32>();
+                    LOG_INFO("server.loading", "AHBot: New bot to start, account={} character={}", account, queriedBotId);
+                }
 
-                    if (debug)
-                    {
-                        LOG_INFO("server.loading", "AHBot: New bot to start, account={} character={}", account, botId);
-                    }
-
-                    gBotsId.insert(botId);
-
-                } while (result->NextRow());
+                gBotsId.insert(queriedBotId);
             }
             else
             {
-                LOG_ERROR("server.loading", "AHBot: Could not query the database for characters of account {}", account);
-                return;
+                LOG_ERROR("server.loading", "AHBot: Could not query the database for character with GUID {} and account {}", botId, account);
             }
         }
     }
+    else
+    {
+        // If no GUIDs are provided, we will use the account ID to fetch all characters
+        // associated with that account.
+        if (debug)
+        {
+            LOG_INFO("server.loading", "AHBot: No GUIDs provided, fetching all characters for account {}", account);
+        }
+
+        // Query the database for all characters associated with the account
+        QueryResult result = CharacterDatabase.Query("SELECT guid FROM characters WHERE account = {}", account);
+
+        if (result)
+        {
+            do
+            {
+                Field* fields = result->Fetch();
+                uint32 botId = fields[0].Get<uint32>();
+
+                if (debug)
+                {
+                    LOG_INFO("server.loading", "AHBot: New bot to start, account={} character={}", account, botId);
+                }
+
+                gBotsId.insert(botId);
+
+            } while (result->NextRow());
+        }
+        else
+        {
+            LOG_ERROR("server.loading", "AHBot: Could not query the database for characters of account {}", account);
+            return;
+        }
+    }
+
 
     if (gBotsId.size() == 0)
     {
@@ -182,11 +189,12 @@ void AHBot_WorldScript::PopulateBots()
     // Insert the bot in the list used for auction house iterations
     gBots.clear();
 
+    gNeutralConfig->LoadBotGUIDs();
+    // there is not difference between the configs yet, so no need to load them separately
     gAllianceConfig->LoadBotGUIDs();
     gHordeConfig->LoadBotGUIDs();
-    gNeutralConfig->LoadBotGUIDs();
 
-    const std::vector<uint32>& botGUIDs = gAllianceConfig->GetBotGUIDs(); // Assuming all configs have the same GUIDs
+    const std::vector<uint32>& botGUIDs = gNeutralConfig->GetBotGUIDs(); // Assuming all configs have the same GUIDs
 
     for (uint32 guid : botGUIDs)
     {
