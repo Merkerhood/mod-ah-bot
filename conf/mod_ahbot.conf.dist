@@ -125,6 +125,7 @@ AuctionHouseBot.UsePlayerbotsAsAHBots = 0
 AuctionHouseBot.PlayerbotsAccountPrefix = "RNDBOT"
 
 AuctionHouseBot.ItemsPerCycle = 200
+
 AuctionHouseBot.ConsiderOnlyBotAuctions = 0
 AuctionHouseBot.DuplicatesCount = 0
 AuctionHouseBot.DivisibleStacks = 0
