@@ -571,8 +571,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         return;
     }
 
-    auto binEmptyCheckStart = std::chrono::high_resolution_clock::now();
-
     // Check if all bins are empty and exit early
     if (config->GreyItemsVec.empty() && config->WhiteItemsVec.empty() &&
         config->GreenItemsVec.empty() && config->BlueItemsVec.empty() &&
@@ -589,11 +587,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
             LOG_ERROR("module", "AHBot [{}]: All item bins are empty, exiting loop", _id);
         }
         return;
-    }
-    if (config->DebugOutSeller){
-        auto binEmptyCheckEnd = std::chrono::high_resolution_clock::now();
-        auto binEmptyCheckDuration = std::chrono::duration_cast<std::chrono::milliseconds>(binEmptyCheckEnd - binEmptyCheckStart).count();
-        LOG_INFO("module", "AHBot [{}]: Empty Check took {} ms to execute", _id, binEmptyCheckDuration);
     }
 
     // Retrieve the auction house situation
@@ -657,15 +650,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
     bool   aboveMax=false;
 
-    auto getNofAuctionsStart = std::chrono::high_resolution_clock::now();
-
     uint32 nbOfAuctions = getNofAuctions(config, auctionHouse, AHBplayer->GetGUID());
-
-    if (config->DebugOutSeller){
-        auto getNofAuctionsEnd = std::chrono::high_resolution_clock::now();
-        auto getNofAuctionsDuration = std::chrono::duration_cast<std::chrono::milliseconds>(getNofAuctionsEnd - getNofAuctionsStart).count();
-        LOG_INFO("module", "AHBot [{}]: getNofAuctions took {} ms to execute", _id, getNofAuctionsDuration);
-    }
 
     uint32 nbItemsToSellThisCycle = 0;
 
@@ -774,8 +759,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         // Select, in rarity order, a new random item
         //
 
-        auto whileItemSelectStart = std::chrono::high_resolution_clock::now();
-
         while (itemID == 0 && loopbreaker <= AUCTION_HOUSE_BOT_LOOP_BREAKER)
         {
             loopbreaker++;
@@ -878,11 +861,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
             }
 
         }
-        if (config->DebugOutSeller){
-            auto whileItemSelectEnd = std::chrono::high_resolution_clock::now();
-            auto whileItemSelectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(whileItemSelectEnd - whileItemSelectStart).count();
-            LOG_INFO("module", "AHBot [{}]: while loop execution took {} ms to execute", _id, whileItemSelectDuration);
-        }
 
         if (itemID == 0)
         {
@@ -949,15 +927,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         uint64 baseBuyoutPrice = 0;
         uint64 baseBidPrice = 0;
 
-        auto getPriceOverrideStart = std::chrono::high_resolution_clock::now();
-
         auto [avgPrice, minPrice] = config->GetPriceOverrideForItem(itemID);
-
-        if (config->DebugOutSeller){
-            auto getPriceOverrideEnd = std::chrono::high_resolution_clock::now();
-            auto getPriceOverrideDuration = std::chrono::duration_cast<std::chrono::milliseconds>(getPriceOverrideEnd - getPriceOverrideStart).count();
-            LOG_INFO("module", "AHBot [{}]: priceoverride took {} ms to execute", _id, getPriceOverrideDuration);
-        }
 
         if (avgPrice > 0 || minPrice > 0)
         {
@@ -1041,8 +1011,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         uint32 deposit = sAuctionMgr->GetAuctionDeposit(ahEntry, elapsingTime, item, stackCount);
 
-        auto TransactionStart = std::chrono::high_resolution_clock::now();
-
         // Perform the auction
         auto trans = CharacterDatabase.BeginTransaction();
 
@@ -1069,13 +1037,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         CharacterDatabase.CommitTransaction(trans);
 
         botItemCounts[itemID]++;
-
-        if (config->DebugOutSeller){
-            auto TransactionEnd = std::chrono::high_resolution_clock::now();
-            auto TransactionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(TransactionEnd - TransactionStart).count();
-            LOG_INFO("module", "AHBot [{}]: transaction took {} ms to execute", _id, TransactionDuration);
-        }
-
 
         // Increments the number of items presents in the auction
         // todo: reread config for actual values, maybe an array to not rely on local count that could potentially be mismatched from config.
