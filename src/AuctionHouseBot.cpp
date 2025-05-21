@@ -1241,8 +1241,10 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
     addItems(yellowItemsBin, false);
 
     // Randomize the collected items
+    /*
     std::shuffle(tempItemIDs.begin(), tempItemIDs.end(), std::mt19937(std::random_device()()));
     allItemIDs.insert(allItemIDs.end(), tempItemIDs.begin(), tempItemIDs.end());
+    */
 
     // Log the number of items to sell
     if(config->TraceSeller)
