@@ -74,7 +74,7 @@ private:
     uint32 getNofAuctions(AHBConfig* config, AuctionHouseObject* auctionHouse, ObjectGuid guid);
     uint32 getStackCount(AHBConfig* config, uint32 max);
     uint32 getElapsedTime(uint32 timeClass);
-    uint32 getElement(const std::vector<uint32>& vec, int index, uint32 botId, uint32 maxDup, std::unordered_map<uint32, uint32>& botItemCounts)
+    uint32 getElement(const std::vector<uint32>& vec, int index, uint32 botId, uint32 maxDup, std::unordered_map<uint32, uint32>& botItemCounts);
 
     uint32 getTotalAuctions(AHBConfig* config, AuctionHouseObject* auctionHouse);
 
