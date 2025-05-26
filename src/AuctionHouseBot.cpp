@@ -614,6 +614,10 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
     if (maxTotalItems == 0  || totalAuctions >= maxTotalItems)
     {
+        if (config->DebugOutSeller)
+        {
+            LOG_INFO("module", "AHBot [{}]: Total auctions {} is above maximum limit {}, exiting loop", _id, totalAuctions, maxTotalItems);
+        }
         return;
     }
 
