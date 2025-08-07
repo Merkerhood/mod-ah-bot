@@ -113,10 +113,17 @@ AuctionHouseBot.UseBuyPriceForSeller = 0
 AuctionHouseBot.UseBuyPriceForBuyer = 0
 AuctionHouseBot.UseMarketPriceForSeller = 0
 AuctionHouseBot.MarketResetThreshold = 25
+
+# define a fixed account and characters which will be used as AHBots
 AuctionHouseBot.Account = 0
 AuctionHouseBot.GUIDs = 0
 
-# Number of auctions to create each cycle (each minute) in total per auctionhouse
+# Enable the use of playerbots GUIDs as sellers and buyers instead of using the fixed account
+AuctionHouseBot.UsePlayerbotsAsAHBots = 0
+
+# Prefix for playerbots account names (used to identify playerbots)
+AuctionHouseBot.PlayerbotsAccountPrefix = "RNDBOT"
+
 AuctionHouseBot.ItemsPerCycle = 200
 
 AuctionHouseBot.ConsiderOnlyBotAuctions = 0
