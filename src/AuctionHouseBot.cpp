@@ -84,7 +84,7 @@ AuctionHouseBot::~AuctionHouseBot()
     // Nothing
 }
 
-uint32 AuctionHouseBot::getElement(const std::vector<uint32>& vec, int index, uint32 botId, uint32 maxDup, std::unordered_map<uint32, uint32>& botItemCounts)
+uint32 AuctionHouseBot::getElement(const std::vector<uint32>& vec, int index, uint32 /* botId */, uint32 maxDup, std::unordered_map<uint32, uint32>& botItemCounts)
 {
     if (index < 0 || index >= static_cast<int>(vec.size()))
         return 0;
@@ -1129,7 +1129,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 // Get Prioritized ItemIDs
 // =============================================================================
 
-std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGuid botGuid, const std::unordered_set<uint32>& itemsInAH)
+std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGuid /* botGuid */, const std::unordered_set<uint32>& itemsInAH)
 {
     //std::vector<uint32> prioritizedItemIDs;
     std::vector<uint32> allItemIDs;
