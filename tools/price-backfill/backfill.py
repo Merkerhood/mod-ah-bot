@@ -62,30 +62,30 @@ class BuildIdState:
 def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshold, ckpt_fh, ckpt_lock):
     time.sleep(rate_delay)
     try:
-        item = wowauctions.fetch_item(state.build_id, item_id)
-    except Exception:  # network/HTTP error survived retries; record and move on
-        rec = {"item": item_id, "row": None, "reason": "fetch-failed"}
-        with ckpt_lock:
-            ckpt_fh.write(json.dumps(rec) + "\n")
-            ckpt_fh.flush()
-        return rec
-    state.note_result(item is None, redeploy_threshold)
-    if item is None:
-        rec = {"item": item_id, "row": None, "reason": "no-data"}
-    else:
-        row, reason = transform.build_row(item_id, item, cfg, now)
-        dev = None
-        if row is not None:
-            name = (item.get("item_info") or {}).get("name", "")
-            dev = transform.compute_deviation(
-                row, existing.get(item_id), name, item.get("stats") or {},
-                cfg.deviation_factor)
-        rec = {
-            "item": item_id,
-            "row": list(row) if row else None,
-            "reason": reason,
-            "deviation": list(dev) if dev else None,
-        }
+        try:
+            item = wowauctions.fetch_item(state.build_id, item_id)
+        except Exception:  # network/HTTP error survived retries; record and move on
+            rec = {"item": item_id, "row": None, "reason": "fetch-failed"}
+        else:
+            state.note_result(item is None, redeploy_threshold)
+            if item is None:
+                rec = {"item": item_id, "row": None, "reason": "no-data"}
+            else:
+                row, reason = transform.build_row(item_id, item, cfg, now)
+                dev = None
+                if row is not None:
+                    name = (item.get("item_info") or {}).get("name", "")
+                    dev = transform.compute_deviation(
+                        row, existing.get(item_id), name, item.get("stats") or {},
+                        cfg.deviation_factor)
+                rec = {
+                    "item": item_id,
+                    "row": list(row) if row else None,
+                    "reason": reason,
+                    "deviation": list(dev) if dev else None,
+                }
+    except Exception:  # transform/deviation/other failure; record, never drop
+        rec = {"item": item_id, "row": None, "reason": "error"}
     with ckpt_lock:
         ckpt_fh.write(json.dumps(rec) + "\n")
         ckpt_fh.flush()
@@ -156,7 +156,8 @@ def main():
                               args.rate_delay, args.redeploy_threshold,
                               ckpt_fh, ckpt_lock) for i in todo]
             n = 0
-            for _ in as_completed(futs):
+            for fut in as_completed(futs):
+                fut.result()  # surface any truly unexpected escape instead of hiding it
                 n += 1
                 if n % 500 == 0:
                     print("processed {}/{}".format(n, len(todo)))
