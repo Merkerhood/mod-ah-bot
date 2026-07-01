@@ -59,7 +59,7 @@ Items ChromieCraft has never scanned return no `stats` → skipped (they keep C+
 | `MIN_ITEM_COUNT`    | `1` (accept any data, even single listings)                  |
 | `MAX_AGE_DAYS`      | `180` (lenient staleness gate; drops only ancient scans)     |
 | Item ID source      | Live `acore_world.item_template` on the Merkerhood realm      |
-| `DEVIATION_FACTOR`  | `3.0` (flag items where CC vs existing price differs ≥ 3×)    |
+| `DEVIATION_FACTOR`  | `1.5` (flag items where CC vs existing price differs ≥ 1.5×)  |
 
 ## Architecture — 5 stages
 
@@ -99,7 +99,7 @@ Items ChromieCraft has never scanned return no `stats` → skipped (they keep C+
      existing format (`SET NAMES` / `DROP TABLE` / `CREATE TABLE` / one `INSERT ... VALUES` per row)
    - write `skipped.csv` (item, reason: no-data / stale / zero-price) for transparency
    - write `deviations.csv` — every item where a shipped override exists **and** the new CC price
-     differs by ≥ `DEVIATION_FACTOR` on either `avgPrice` or `minPrice`. Columns:
+     differs by ≥ `DEVIATION_FACTOR` (1.5×) on either `avgPrice` or `minPrice`. Columns:
      `item, item_name, existing_avg, existing_min, cc_avg, cc_min, avg_ratio, min_ratio,
      cc_item_count, cc_last_seen`, sorted by largest ratio first. The SQL is still written with
      the CC values (full-refresh decision stands); this report is the manual-review worklist to
@@ -123,8 +123,8 @@ A small config block / CLI flags: `DB_DSN` or `--ids-csv`, `PRICE_SCALE`, `MIN_I
 
 - Unit tests for stage 4 against fixture JSON: thin data (count=1), stale (> MAX_AGE_DAYS),
   `avg < min`, sub-vendor price, missing `stats`, zero price.
-- Unit test for the deviation report: item with an existing override whose CC price is ≥ 3× (and
-  one just under 3×) — verify only the former lands in `deviations.csv` with correct ratios, and
+- Unit test for the deviation report: item with an existing override whose CC price is ≥ 1.5× (and
+  one just under 1.5×) — verify only the former lands in `deviations.csv` with correct ratios, and
   that the SQL still emits the CC value regardless.
 - Unit test for the existing-SQL parser (stage 0) against a fixture with the shipped INSERT format.
 - `--limit 50` smoke run validating end-to-end fetch → SQL emit before the full pull.
