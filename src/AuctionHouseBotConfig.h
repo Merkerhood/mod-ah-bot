@@ -299,6 +299,10 @@ public:
     float GetPriceOverride() const { return priceOverride; }
     std::tuple<uint64, uint64> GetPriceOverrideForItem(uint32 itemId) const;
 
+    // Count Override: per-item max listing count (mirrors ChromieCraft liquidity)
+    std::unordered_map<uint32, uint32> itemCountOverrides;
+    uint32 GetCountOverrideForItem(uint32 itemId) const;
+
     bool UseAuctionCount; // true to use auction count, false to use days
     uint32 AuctionCount;  // Number of recent auctions to consider
     uint32 Days;          // Number of days to consider
@@ -371,6 +375,7 @@ public:
     uint64 GetItemPrice(uint32 id);
 
     void LoadPriceOverrides();
+    void LoadCountOverrides();
 
     void LoadBotGUIDs();
     const std::vector<uint32>& GetBotGUIDs() const { return botGUIDs; }
