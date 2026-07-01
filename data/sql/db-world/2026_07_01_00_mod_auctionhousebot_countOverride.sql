@@ -7,7 +7,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `mod_auctionhousebot_countOverride`;
 CREATE TABLE `mod_auctionhousebot_countOverride`  (
   `item` mediumint(8) NOT NULL,
-  `targetCount` int NOT NULL,
+  `targetCount` int UNSIGNED NOT NULL,
   PRIMARY KEY (`item`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
 

@@ -3532,7 +3532,8 @@ void AHBConfig::LoadCountOverrides()
 
     if (!result)
     {
-        LOG_ERROR("module", "AHBConfig: No count overrides found in mod_auctionhousebot_countOverride");
+        // Optional feature: an empty/absent table just means the bot keeps using DuplicatesCount.
+        LOG_INFO("module", "AHBConfig: No count overrides in mod_auctionhousebot_countOverride (optional)");
         return;
     }
 
