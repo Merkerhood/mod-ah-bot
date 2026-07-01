@@ -62,5 +62,33 @@ class ProcessIdExceptionTest(unittest.TestCase):
         self.assertEqual(lines[0]["reason"], "error")
 
 
+class SelectRecoveryIdsTest(unittest.TestCase):
+    def test_select_recovery_ids(self):
+        records = [
+            {"item": 1, "reason": "no-data", "gen": 0},
+            {"item": 2, "reason": "no-data", "gen": 1},
+            {"item": 3, "reason": "thin", "gen": 0},
+            {"item": 4, "row": [4, 10, 10], "reason": None, "gen": 0},
+        ]
+        self.assertEqual(backfill.select_recovery_ids(records, 1), [1])
+
+
+class NoteResultTest(unittest.TestCase):
+    def test_note_result_reresolves_at_threshold(self):
+        orig = wowauctions.resolve_build_id
+        wowauctions.resolve_build_id = lambda: "NEWBUILD"
+        try:
+            state = backfill.BuildIdState("OLD")
+            for _ in range(3):
+                state.note_result(True, 3)
+            self.assertEqual(state.build_id, "NEWBUILD")
+            self.assertEqual(state.generation, 1)
+            self.assertEqual(state.consecutive_404, 0)
+            state.note_result(False, 3)
+            self.assertEqual(state.consecutive_404, 0)
+        finally:
+            wowauctions.resolve_build_id = orig
+
+
 if __name__ == "__main__":
     unittest.main()

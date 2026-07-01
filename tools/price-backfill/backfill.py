@@ -46,6 +46,10 @@ class BuildIdState:
         self.generation = 0
         self.consecutive_404 = 0
 
+    def snapshot(self):
+        with self._lock:
+            return self.build_id, self.generation
+
     def note_result(self, was_404, threshold):
         with self._lock:
             if was_404:
@@ -61,15 +65,16 @@ class BuildIdState:
 
 def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshold, ckpt_fh, ckpt_lock):
     time.sleep(rate_delay)
+    build_id, gen = state.snapshot()
     try:
         try:
-            item = wowauctions.fetch_item(state.build_id, item_id)
+            item = wowauctions.fetch_item(build_id, item_id)
         except Exception:  # network/HTTP error survived retries; record and move on
-            rec = {"item": item_id, "row": None, "reason": "fetch-failed"}
+            rec = {"item": item_id, "row": None, "reason": "fetch-failed", "gen": gen}
         else:
             state.note_result(item is None, redeploy_threshold)
             if item is None:
-                rec = {"item": item_id, "row": None, "reason": "no-data"}
+                rec = {"item": item_id, "row": None, "reason": "no-data", "gen": gen}
             else:
                 row, reason = transform.build_row(item_id, item, cfg, now)
                 dev = None
@@ -83,9 +88,10 @@ def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshol
                     "row": list(row) if row else None,
                     "reason": reason,
                     "deviation": list(dev) if dev else None,
+                    "gen": gen,
                 }
     except Exception:  # transform/deviation/other failure; record, never drop
-        rec = {"item": item_id, "row": None, "reason": "error"}
+        rec = {"item": item_id, "row": None, "reason": "error", "gen": gen}
     with ckpt_lock:
         ckpt_fh.write(json.dumps(rec) + "\n")
         ckpt_fh.flush()
@@ -111,6 +117,13 @@ def write_outputs(records, out_sql, skipped_csv, deviations_csv):
                     "cc_min", "avg_ratio", "min_ratio", "cc_item_count", "cc_last_seen"])
         w.writerows(devs)
     return len(rows), len(devs)
+
+
+def select_recovery_ids(records, final_gen):
+    """Item IDs recorded as no-data under a build generation older than the
+    current one — these 404'd against a stale buildId and deserve a re-fetch."""
+    return [r["item"] for r in records
+            if r.get("reason") == "no-data" and r.get("gen", 0) < final_gen]
 
 
 def main():
@@ -151,16 +164,30 @@ def main():
     ckpt_lock = threading.Lock()
     mode = "a" if args.resume else "w"
     with open(args.checkpoint, mode, encoding="utf-8") as ckpt_fh:
-        with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
-            futs = [ex.submit(process_id, i, state, cfg, existing, now,
-                              args.rate_delay, args.redeploy_threshold,
-                              ckpt_fh, ckpt_lock) for i in todo]
-            n = 0
-            for fut in as_completed(futs):
-                fut.result()  # surface any truly unexpected escape instead of hiding it
-                n += 1
-                if n % 500 == 0:
-                    print("processed {}/{}".format(n, len(todo)))
+        def run_pass(id_list):
+            with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
+                futs = [ex.submit(process_id, i, state, cfg, existing, now,
+                                  args.rate_delay, args.redeploy_threshold,
+                                  ckpt_fh, ckpt_lock) for i in id_list]
+                done_n = 0
+                for fut in as_completed(futs):
+                    fut.result()
+                    done_n += 1
+                    if done_n % 500 == 0:
+                        print("processed {}/{}".format(done_n, len(id_list)))
+
+        run_pass(todo)
+
+        # Recovery: a mid-run redeploy (generation bumped) falsely 404'd items
+        # fetched under the stale buildId. Re-fetch just those with the new one.
+        final_gen = state.generation
+        if final_gen > 0:
+            recovery = select_recovery_ids(
+                list(load_checkpoint(args.checkpoint).values()), final_gen)
+            if recovery:
+                print("redeploy detected (gen={}); recovery re-fetch of {} items".format(
+                    final_gen, len(recovery)))
+                run_pass(recovery)
 
     records = list(load_checkpoint(args.checkpoint).values())
     kept, ndev = write_outputs(records, out_sql, args.skipped_csv, args.deviations_csv)
