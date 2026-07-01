@@ -40,11 +40,12 @@ def load_checkpoint(path):
 class BuildIdState:
     """Thread-safe buildId holder with redeploy re-resolution."""
 
-    def __init__(self, build_id):
+    def __init__(self, build_id, sentinel_id=4389):
         self._lock = threading.Lock()
         self.build_id = build_id
         self.generation = 0
         self.consecutive_404 = 0
+        self.sentinel_id = sentinel_id  # known-good item; confirms a real redeploy
 
     def snapshot(self):
         with self._lock:
@@ -52,14 +53,31 @@ class BuildIdState:
 
     def note_result(self, was_404, threshold):
         with self._lock:
-            if was_404:
-                self.consecutive_404 += 1
-                if self.consecutive_404 >= threshold:
-                    self.build_id = wowauctions.resolve_build_id()
-                    self.generation += 1
-                    self.consecutive_404 = 0
-            else:
+            if not was_404:
                 self.consecutive_404 = 0
+                return self.build_id
+            self.consecutive_404 += 1
+            if self.consecutive_404 < threshold:
+                return self.build_id
+            # A run of 404s usually just means a stretch of items ChromieCraft has
+            # no data for -- NOT a site redeploy. Confirm with a known-good sentinel
+            # item: only a genuine redeploy makes the current buildId 404 for an
+            # item that always has data. This stops no-data streaks from triggering
+            # a needless buildId re-resolve storm and recovery re-fetch.
+            self.consecutive_404 = 0
+            try:
+                sentinel = wowauctions.fetch_item(self.build_id, self.sentinel_id)
+            except Exception:
+                return self.build_id  # transient error; do not assume redeploy
+            if sentinel is not None:
+                return self.build_id  # sentinel still resolves -> buildId is fine
+            # Sentinel 404s under the current buildId -> real redeploy. Re-resolve,
+            # and bump the generation only if the buildId actually changed, so the
+            # recovery pass stays scoped to items fetched under the stale buildId.
+            new_build_id = wowauctions.resolve_build_id()
+            if new_build_id != self.build_id:
+                self.build_id = new_build_id
+                self.generation += 1
             return self.build_id
 
 
@@ -141,7 +159,10 @@ def main():
     p.add_argument("--deviation-factor", type=float, default=1.5)
     p.add_argument("--concurrency", type=int, default=6)
     p.add_argument("--rate-delay", type=float, default=0.15)
-    p.add_argument("--redeploy-threshold", type=int, default=25)
+    p.add_argument("--redeploy-threshold", type=int, default=25,
+                   help="consecutive 404s before a sentinel check for a real redeploy")
+    p.add_argument("--sentinel-id", type=int, default=4389,
+                   help="known-good item id used to confirm a real site redeploy")
     p.add_argument("--limit", type=int, default=0)
     args = p.parse_args()
 
@@ -160,7 +181,7 @@ def main():
     todo = [i for i in ids if i not in done]
     print("candidates={} already_done={} todo={}".format(len(ids), len(done), len(todo)))
 
-    state = BuildIdState(wowauctions.resolve_build_id())
+    state = BuildIdState(wowauctions.resolve_build_id(), sentinel_id=args.sentinel_id)
     ckpt_lock = threading.Lock()
     mode = "a" if args.resume else "w"
     with open(args.checkpoint, mode, encoding="utf-8") as ckpt_fh:

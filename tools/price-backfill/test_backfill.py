@@ -74,20 +74,59 @@ class SelectRecoveryIdsTest(unittest.TestCase):
 
 
 class NoteResultTest(unittest.TestCase):
-    def test_note_result_reresolves_at_threshold(self):
-        orig = wowauctions.resolve_build_id
+    """Redeploy is confirmed via a sentinel item, not raw 404 counting."""
+
+    def setUp(self):
+        self._orig_fetch = wowauctions.fetch_item
+        self._orig_resolve = wowauctions.resolve_build_id
+
+    def tearDown(self):
+        wowauctions.fetch_item = self._orig_fetch
+        wowauctions.resolve_build_id = self._orig_resolve
+
+    def test_sentinel_ok_means_no_reresolve(self):
+        # A no-data streak: the sentinel still returns data, so despite crossing
+        # the threshold we must NOT re-resolve or bump the generation.
+        wowauctions.fetch_item = lambda b, i: {"stats": {"avg_price": 5}}
+        wowauctions.resolve_build_id = lambda: (_ for _ in ()).throw(
+            AssertionError("resolve_build_id must not be called on a false alarm"))
+        state = backfill.BuildIdState("OLD", sentinel_id=4389)
+        for _ in range(3):
+            state.note_result(True, 3)
+        self.assertEqual(state.build_id, "OLD")
+        self.assertEqual(state.generation, 0)
+        self.assertEqual(state.consecutive_404, 0)
+
+    def test_sentinel_404_triggers_reresolve(self):
+        # Genuine redeploy: sentinel 404s under the current buildId and the new
+        # buildId differs -> re-resolve and bump generation.
+        wowauctions.fetch_item = lambda b, i: None
         wowauctions.resolve_build_id = lambda: "NEWBUILD"
-        try:
-            state = backfill.BuildIdState("OLD")
-            for _ in range(3):
-                state.note_result(True, 3)
-            self.assertEqual(state.build_id, "NEWBUILD")
-            self.assertEqual(state.generation, 1)
-            self.assertEqual(state.consecutive_404, 0)
-            state.note_result(False, 3)
-            self.assertEqual(state.consecutive_404, 0)
-        finally:
-            wowauctions.resolve_build_id = orig
+        state = backfill.BuildIdState("OLD", sentinel_id=4389)
+        for _ in range(3):
+            state.note_result(True, 3)
+        self.assertEqual(state.build_id, "NEWBUILD")
+        self.assertEqual(state.generation, 1)
+        self.assertEqual(state.consecutive_404, 0)
+
+    def test_sentinel_404_same_buildid_no_gen_bump(self):
+        # Sentinel 404s but re-resolution returns the same buildId (transient /
+        # sentinel genuinely gone) -> no generation bump, so no needless recovery.
+        wowauctions.fetch_item = lambda b, i: None
+        wowauctions.resolve_build_id = lambda: "OLD"
+        state = backfill.BuildIdState("OLD", sentinel_id=4389)
+        for _ in range(3):
+            state.note_result(True, 3)
+        self.assertEqual(state.build_id, "OLD")
+        self.assertEqual(state.generation, 0)
+
+    def test_non404_resets_counter(self):
+        state = backfill.BuildIdState("OLD")
+        state.note_result(True, 3)
+        state.note_result(True, 3)
+        self.assertEqual(state.consecutive_404, 2)
+        state.note_result(False, 3)
+        self.assertEqual(state.consecutive_404, 0)
 
 
 if __name__ == "__main__":
