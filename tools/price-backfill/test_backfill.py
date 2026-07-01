@@ -62,6 +62,38 @@ class ProcessIdExceptionTest(unittest.TestCase):
         self.assertEqual(lines[0]["reason"], "error")
 
 
+class ItemCountCaptureTest(unittest.TestCase):
+    def setUp(self):
+        self._orig_fetch = wowauctions.fetch_item
+        fd, self.ckpt = tempfile.mkstemp(suffix=".jsonl")
+        os.close(fd)
+        self.cfg = transform.Config(1.0, 1, 180, 1.5)
+        self.state = backfill.BuildIdState("build123")
+
+    def tearDown(self):
+        wowauctions.fetch_item = self._orig_fetch
+        if os.path.exists(self.ckpt):
+            os.remove(self.ckpt)
+
+    def test_cc_item_count_and_last_seen_captured(self):
+        wowauctions.fetch_item = lambda build_id, item_id: {
+            "stats": {
+                "avg_price": 100,
+                "minimum_buyout": 80,
+                "item_count": 53,
+                "item_last_seen": "2026-07-01 11:45:09",
+            },
+            "item_info": {"SellPrice": 10, "name": "X"},
+        }
+        lock = threading.Lock()
+        with open(self.ckpt, "w", encoding="utf-8") as fh:
+            rec = backfill.process_id(
+                123, self.state, self.cfg, {}, datetime.now(),
+                0.0, 25, fh, lock)
+        self.assertEqual(rec["cc_item_count"], 53)
+        self.assertEqual(rec["cc_last_seen"], "2026-07-01 11:45:09")
+
+
 class SelectRecoveryIdsTest(unittest.TestCase):
     def test_select_recovery_ids(self):
         records = [

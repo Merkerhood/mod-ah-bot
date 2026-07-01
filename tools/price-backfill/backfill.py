@@ -108,6 +108,10 @@ def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshol
                     "deviation": list(dev) if dev else None,
                     "gen": gen,
                 }
+                stats = item.get("stats") or {}
+                if stats:
+                    rec["cc_item_count"] = stats.get("item_count")
+                    rec["cc_last_seen"] = stats.get("item_last_seen")
     except Exception:  # transform/deviation/other failure; record, never drop
         rec = {"item": item_id, "row": None, "reason": "error", "gen": gen}
     with ckpt_lock:
@@ -116,7 +120,7 @@ def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshol
     return rec
 
 
-def write_outputs(records, out_sql, skipped_csv, deviations_csv):
+def write_outputs(records, out_sql, skipped_csv, deviations_csv, item_counts_csv=None):
     rows = [tuple(r["row"]) for r in records if r.get("row")]
     sqlio.write_override_sql(out_sql, rows)
 
@@ -134,6 +138,16 @@ def write_outputs(records, out_sql, skipped_csv, deviations_csv):
         w.writerow(["item", "item_name", "existing_avg", "existing_min", "cc_avg",
                     "cc_min", "avg_ratio", "min_ratio", "cc_item_count", "cc_last_seen"])
         w.writerows(devs)
+
+    if item_counts_csv:
+        counts = [r for r in records if r.get("cc_item_count") is not None]
+        counts.sort(key=lambda r: r["item"])
+        with open(item_counts_csv, "w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            w.writerow(["item", "cc_item_count", "cc_last_seen"])
+            for r in counts:
+                w.writerow([r["item"], r["cc_item_count"], r.get("cc_last_seen")])
+
     return len(rows), len(devs)
 
 
@@ -151,6 +165,7 @@ def main():
     p.add_argument("--out-sql", default=None, help="defaults to --existing-sql")
     p.add_argument("--skipped-csv", default="skipped.csv")
     p.add_argument("--deviations-csv", default="deviations.csv")
+    p.add_argument("--item-counts-csv", default="item-counts.csv")
     p.add_argument("--checkpoint", default="checkpoint.jsonl")
     p.add_argument("--resume", action="store_true")
     p.add_argument("--price-scale", type=float, default=1.0)
@@ -211,7 +226,8 @@ def main():
                 run_pass(recovery)
 
     records = list(load_checkpoint(args.checkpoint).values())
-    kept, ndev = write_outputs(records, out_sql, args.skipped_csv, args.deviations_csv)
+    kept, ndev = write_outputs(records, out_sql, args.skipped_csv, args.deviations_csv,
+                               args.item_counts_csv)
     print("wrote {} rows to {} | {} deviations | build_gen={}".format(
         kept, out_sql, ndev, state.generation))
 
