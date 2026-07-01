@@ -5,3 +5,4 @@ deviations.csv
 *.out.sql
 __pycache__/
 *.pyc
+vendor.csv
