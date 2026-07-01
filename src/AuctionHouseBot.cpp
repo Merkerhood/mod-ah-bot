@@ -101,19 +101,34 @@ uint32 AuctionHouseBot::getElement(const std::vector<uint32>& vec, int index, ui
     return itemID;
 }
 
-uint32 AuctionHouseBot::getStackCount(AHBConfig* config, uint32 max)
+uint32 AuctionHouseBot::getStackCount(AHBConfig* config, uint32 max, ItemTemplate const* prototype)
 {
     uint32 maxStackSize = config->GetMaxStackSize();
 
-    if (max == 1)
+    // Some categories are always sold one at a time, regardless of the template's
+    // stackable value -- a real player never posts a glyph, recipe or cut gem in a stack.
+    switch (prototype->Class)
+    {
+    case ITEM_CLASS_GLYPH:
+    case ITEM_CLASS_RECIPE:
+    case ITEM_CLASS_QUEST:
+    case ITEM_CLASS_CONTAINER:
+    case ITEM_CLASS_KEY:
+        return 1;
+    case ITEM_CLASS_GEM:
+        if (prototype->GemProperties != 0) // cut/socketable gem; raw gems stack like mats
+            return 1;
+        break;
+    default:
+        break;
+    }
+
+    if (max <= 1)
     {
         return 1;
     }
 
-    //
-    // Organize the stacks in a pseudo random way
-    //
-
+    // Optional legacy mode: organize stacks by divisibility.
     if (config->DivisibleStacks)
     {
         uint32 ret = 0;
@@ -141,9 +156,41 @@ uint32 AuctionHouseBot::getStackCount(AHBConfig* config, uint32 max)
         return ret;
     }
 
-    // Totally random stack sizes...
-    // TODO: This is not good, we need to find a better way to organize the stacks
-    return urand(1, std::min(max, maxStackSize));
+    // Realistic weighted breakpoints -- looks player-made, never a random 7 or 13.
+    uint32 cap = (maxStackSize > 0) ? std::min(max, maxStackSize) : max;
+    if (cap <= 1)
+    {
+        return 1;
+    }
+
+    uint32 roll = urand(1, 100);
+    if (roll <= 30)
+    {
+        return cap; // full stack
+    }
+    if (roll <= 50)
+    {
+        return 1;   // single
+    }
+
+    // A common human breakpoint that fits under the cap.
+    uint32 const breakpoints[3] = { 5, 10, 20 };
+    uint32 valid[3];
+    uint32 nValid = 0;
+    for (uint32 i = 0; i < 3; ++i)
+    {
+        if (breakpoints[i] <= cap)
+        {
+            valid[nValid++] = breakpoints[i];
+        }
+    }
+
+    if (nValid == 0)
+    {
+        return cap; // cap is 2..4: no clean breakpoint, use the full stack
+    }
+
+    return valid[urand(0, nValid - 1)];
 }
 
 uint32 AuctionHouseBot::getElapsedTime(uint32 timeClass)
@@ -985,11 +1032,11 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         // Determine the stack size
         if (config->GetMaxStack(prototype->Quality) > 1 && item->GetMaxStackCount() > 1)
         {
-            stackCount = minValue(getStackCount(config, item->GetMaxStackCount()), config->GetMaxStack(prototype->Quality));
+            stackCount = minValue(getStackCount(config, item->GetMaxStackCount(), prototype), config->GetMaxStack(prototype->Quality));
         }
         else if (config->GetMaxStack(prototype->Quality) == 0 && item->GetMaxStackCount() > 1)
         {
-            stackCount = getStackCount(config, item->GetMaxStackCount());
+            stackCount = getStackCount(config, item->GetMaxStackCount(), prototype);
         }
         else
         {
