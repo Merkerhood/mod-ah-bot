@@ -38,7 +38,18 @@ Smoke test first with `--limit 50`.
 ## Tuning
 
 `--price-scale` (default 1.0), `--min-item-count` (1), `--max-age-days` (180),
-`--deviation-factor` (1.5), `--concurrency` (6), `--rate-delay` (0.15s).
+`--deviation-factor` (1.5), `--concurrency` (6), `--rate-delay` (0.15s),
+`--redeploy-threshold` (25), `--sentinel-id` (4389).
+
+## Redeploy detection
+
+wowauctions.net is a Next.js app whose `buildId` changes on redeploy, which makes
+the old data URLs 404. Since roughly half of WotLK items also legitimately have no
+ChromieCraft data (a normal 404), the tool cannot treat a raw 404 streak as a
+redeploy. After `--redeploy-threshold` consecutive 404s it checks a known-good
+`--sentinel-id` (default 4389, Gyrochronatom): only if that item also 404s is the
+buildId re-resolved and a scoped recovery re-fetch triggered. This prevents a
+no-data streak from causing a re-resolve storm that rate-limits the site.
 
 ## Tests
 
