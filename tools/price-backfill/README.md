@@ -45,3 +45,25 @@ Smoke test first with `--limit 50`.
 ```bash
 python3 -m unittest discover -v
 ```
+
+## Reagent-cost derivation (craftable gap items)
+
+For items with no ChromieCraft price that are craftable, derive a price from
+reagent costs.
+
+1. Parse `Spell.dbc` into `recipes.json` (run on the realm host, which has the DBC):
+   ```bash
+   python3 -c "import json, spelldbc; r=spelldbc.parse_spell_dbc('/srv/wow/data/dbc/Spell.dbc'); spelldbc.validate(r); json.dump({str(k):[v[0],[list(t) for t in v[1]]] for k,v in r.items()}, open('recipes.json','w'))"
+   ```
+   Commit `recipes.json` (reusable; no runtime DBC dependency after this).
+2. Export vendor prices: `mysql -N -B acore_world -e "SELECT entry, SellPrice FROM item_template;" > vendor.csv`.
+3. Merge derived prices into the override SQL:
+   ```bash
+   python3 derive.py --recipes-json recipes.json \
+     --existing-sql ../../data/sql/db-world/2023_11_16_mod_auctionhousebot_priceOverride.sql \
+     --vendor-csv vendor.csv --report reports/derived-prices.csv
+   ```
+   Derived rows only ADD craftable items with no existing override. Review
+   `reports/derived-prices.csv` (the `reagent_sources` column shows confidence).
+
+Tuning: `--margin-avg` (1.3), `--margin-min` (1.0), `--max-depth` (10).
