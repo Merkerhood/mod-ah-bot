@@ -73,6 +73,17 @@ class SelectRecoveryIdsTest(unittest.TestCase):
         self.assertEqual(backfill.select_recovery_ids(records, 1), [1])
 
 
+class SelectFetchFailedTest(unittest.TestCase):
+    def test_selects_only_fetch_failed(self):
+        records = [
+            {"item": 1, "reason": "fetch-failed"},
+            {"item": 2, "reason": "no-data"},
+            {"item": 3, "row": [3, 1, 1], "reason": None},
+            {"item": 4, "reason": "fetch-failed"},
+        ]
+        self.assertEqual(sorted(backfill.select_fetch_failed(records)), [1, 4])
+
+
 class NoteResultTest(unittest.TestCase):
     """Redeploy is confirmed via a sentinel item, not raw 404 counting."""
 

@@ -18,7 +18,7 @@ def _raw_get(url: str, timeout: int) -> str:
         return resp.read().decode("utf-8")
 
 
-def _get(url: str, timeout: int = 20, retries: int = 3, backoff: float = 1.0) -> str:
+def _get(url: str, timeout: int = 20, retries: int = 5, backoff: float = 1.0) -> str:
     """GET with exponential backoff on 429/5xx and network errors. 404 is raised immediately."""
     attempt = 0
     while True:

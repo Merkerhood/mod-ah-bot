@@ -144,6 +144,11 @@ def select_recovery_ids(records, final_gen):
             if r.get("reason") == "no-data" and r.get("gen", 0) < final_gen]
 
 
+def select_fetch_failed(records):
+    """Items whose fetch errored out (transient HTTP/network) — worth another try."""
+    return [r["item"] for r in records if r.get("reason") == "fetch-failed"]
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--ids-csv", required=True)
@@ -164,6 +169,8 @@ def main():
     p.add_argument("--sentinel-id", type=int, default=4389,
                    help="known-good item id used to confirm a real site redeploy")
     p.add_argument("--limit", type=int, default=0)
+    p.add_argument("--resweep-rounds", type=int, default=2,
+                   help="extra passes to retry transient fetch-failed items")
     args = p.parse_args()
 
     out_sql = args.out_sql or args.existing_sql
@@ -209,6 +216,16 @@ def main():
                 print("redeploy detected (gen={}); recovery re-fetch of {} items".format(
                     final_gen, len(recovery)))
                 run_pass(recovery)
+
+        # Re-sweep transient fetch failures: HTTP/network errors that survived
+        # per-request retries are usually transient over a long run, so re-fetch
+        # them for a few bounded rounds until none remain.
+        for _ in range(args.resweep_rounds):
+            failed = select_fetch_failed(list(load_checkpoint(args.checkpoint).values()))
+            if not failed:
+                break
+            print("re-sweeping {} fetch-failed items".format(len(failed)))
+            run_pass(failed)
 
     records = list(load_checkpoint(args.checkpoint).values())
     kept, ndev = write_outputs(records, out_sql, args.skipped_csv, args.deviations_csv)

@@ -39,7 +39,14 @@ Smoke test first with `--limit 50`.
 
 `--price-scale` (default 1.0), `--min-item-count` (1), `--max-age-days` (180),
 `--deviation-factor` (1.5), `--concurrency` (6), `--rate-delay` (0.15s),
-`--redeploy-threshold` (25), `--sentinel-id` (4389).
+`--redeploy-threshold` (25), `--sentinel-id` (4389), `--resweep-rounds` (2).
+
+## Transient fetch failures
+
+Over a long run some requests hit transient HTTP/network errors that survive the
+per-request retries (`_get` retries 5x with exponential backoff). At the end of a run
+the tool re-sweeps any `fetch-failed` items for `--resweep-rounds` bounded passes until
+none remain, so a single run doesn't leave a gap of items that simply weren't reached.
 
 ## Redeploy detection
 
