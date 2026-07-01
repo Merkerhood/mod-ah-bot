@@ -249,8 +249,6 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         return;
     }
 
-    uint32 guid = AHBplayer->GetGUID().GetCounter();
-
     uint32 bidsPerInterval = 1;
     if (config == _allianceConfig)
     {
@@ -608,7 +606,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     // Check the given limits
     //
     uint32 totalAuctions = getTotalAuctions(config, auctionHouse);
-    uint32 minTotalItems = config->GetMinItems();
     uint32 maxTotalItems = config->GetMaxItems();
     uint32 maxItemsToList = 0;
 
@@ -650,7 +647,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     // Divide maxItems by the number of bots to get the max items per bot
     uint32 numBots = config->GetBotGUIDs().size();
     uint32 maxAuctionsPerBot = (maxTotalItems + numBots - 1) / numBots;
-    uint32 minAuctionsPerBot = (minTotalItems + numBots - 1) / numBots;
 
     bool   aboveMax=false;
 
@@ -685,9 +681,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     {
         LOG_INFO("module", "AHBot [{}]: Trying to list {} items", _id, nbItemsToSellThisCycle);
     }
-
-    // Use the max stack size configuration value
-    uint32 maxStackSize = config->GetMaxStackSize();
 
     // Retrieve the configuration for this run
     //
