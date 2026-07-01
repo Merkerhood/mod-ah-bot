@@ -1,0 +1,7 @@
+candidates.csv
+checkpoint.jsonl
+skipped.csv
+deviations.csv
+*.out.sql
+__pycache__/
+*.pyc
