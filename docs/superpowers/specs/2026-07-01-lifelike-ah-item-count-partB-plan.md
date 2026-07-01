@@ -11,18 +11,20 @@ instead of the uniform per-quality counts it uses today.
 
 ## Measured data (from the 2026-07-01 fetch)
 
-9,419 items have a live ChromieCraft listing count (`stats.item_count`). The distribution
+10,601 items have a live ChromieCraft listing count (`stats.item_count`). The distribution
 is heavily skewed:
 
 | stat | value |
 |---|---|
-| items with a count | 9,419 |
-| count == 1 | 5,380 (57%) |
+| items with a count | 10,601 |
+| count == 1 | 5,984 (56%) |
 | median | 1 |
 | p90 | 18 |
-| p95 | 44 |
-| p99 | 300 |
+| p95 | 42 |
+| p99 | 326 |
 | max | 102,000 |
+| items >= 50 | 469 |
+| items >= 200 | 170 |
 
 Raw counts cannot be used directly: a bot listing 102,000 (or even 300) of an item would
 be absurd and would swamp the AH. The mapping must clamp the tail.
