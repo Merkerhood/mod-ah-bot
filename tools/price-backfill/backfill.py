@@ -87,15 +87,17 @@ class BuildIdState:
             # and bump the generation only if the buildId actually changed, so the
             # recovery pass stays scoped to items fetched under the stale buildId.
             new_build_id = wowauctions.resolve_build_id()
+            with self._lock:
+                if new_build_id != self.build_id:
+                    self.build_id = new_build_id
+                    self.generation += 1
+                return self.build_id
         finally:
+            # Released only after the buildId update above; a thread crossing
+            # the threshold mid-resolve must not start a redundant resolve
+            # against the still-stale buildId.
             with self._lock:
                 self._resolving = False
-
-        with self._lock:
-            if new_build_id != self.build_id:
-                self.build_id = new_build_id
-                self.generation += 1
-            return self.build_id
 
 
 def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshold, ckpt_fh, ckpt_lock):
