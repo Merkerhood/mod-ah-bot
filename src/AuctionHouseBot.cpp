@@ -504,9 +504,9 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
             continue;
         }
 
-        // Calculate our bid
-        double bidRate = static_cast<double>(urand(1, 100)) / 100;
-        double bidValue = currentPrice + ((maximumBid - currentPrice) * bidRate);
+        // Calculate our bid: step up from the current price by a small percentage,
+        // rather than leaping anywhere up to our maximum acceptable price.
+        double bidValue = currentPrice + (static_cast<double>(currentPrice) * urand(config->GetBuyerBidIncrementMinPct(), config->GetBuyerBidIncrementMaxPct()) / 100.0);
         uint32 bidPrice = static_cast<uint32>(bidValue);
 
 
@@ -529,7 +529,6 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         if (config->DebugOutBuyer)
         {
             LOG_INFO("module", "-------------------------------------------------");
-            LOG_INFO("module", "AHBot [{}]: Bid Rate: {}", _id, bidRate);
             LOG_INFO("module", "AHBot [{}]: Bid Value: {}", _id, bidValue);
             LOG_INFO("module", "AHBot [{}]: Bid Price: {}", _id, bidPrice);
             LOG_INFO("module", "AHBot [{}]: Minimum Outbid: {}", _id, minimumOutbid);
@@ -1002,7 +1001,18 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         if (avgPrice > 0 || minPrice > 0)
         {
             baseBuyoutPrice = avgPrice;
-            baseBidPrice = minPrice;
+            baseBidPrice = baseBuyoutPrice * urand(config->GetMinBidPrice(prototype->Quality), config->GetMaxBidPrice(prototype->Quality)) / 100;
+
+            // Respect the curated floor from the override, but never exceed buyout
+            if (baseBidPrice < minPrice)
+            {
+                baseBidPrice = minPrice;
+            }
+
+            if (baseBidPrice > baseBuyoutPrice)
+            {
+                baseBidPrice = baseBuyoutPrice;
+            }
         }
         else
         {

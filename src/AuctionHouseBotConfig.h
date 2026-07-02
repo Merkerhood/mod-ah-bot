@@ -310,6 +310,10 @@ public:
     bool WeightRecent;    // true to weight recent auctions more heavily
     float MinPriceTolerance; // Tolerance factor for minimum price
 
+    // Buyer outbid increment, as a percentage of the current price
+    uint32 BuyerBidIncrementMinPct;
+    uint32 BuyerBidIncrementMaxPct;
+
     // Constructors/destructors
     AHBConfig();
     AHBConfig(uint32 ahid, AHBConfig* conf);
@@ -388,6 +392,9 @@ public:
 
     uint32 GetNeutralBiddingInterval() const { return _neutralBiddingInterval; }
     uint32 GetNeutralBidsPerInterval() const { return _neutralBidsPerInterval; }
+
+    uint32 GetBuyerBidIncrementMinPct() const { return BuyerBidIncrementMinPct; }
+    uint32 GetBuyerBidIncrementMaxPct() const { return BuyerBidIncrementMaxPct; }
 };
 
 //

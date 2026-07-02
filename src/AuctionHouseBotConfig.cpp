@@ -2089,6 +2089,16 @@ void AHBConfig::InitializeFromFile()
     WeightRecent                   = sConfigMgr->GetOption<bool>("AuctionHouseBot.WeightRecent", true);
     MinPriceTolerance              = sConfigMgr->GetOption<float>("AuctionHouseBot.MinPriceTolerance", 0.9f); // Default tolerance is 90% of minPrice
 
+    // Buyer outbid increment
+    BuyerBidIncrementMinPct        = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Buyer.BidIncrementMinPct", 5);
+    BuyerBidIncrementMaxPct        = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Buyer.BidIncrementMaxPct", 15);
+
+    if (BuyerBidIncrementMinPct == 0 || BuyerBidIncrementMinPct > BuyerBidIncrementMaxPct || BuyerBidIncrementMaxPct > 100)
+    {
+        LOG_WARN("module", "AHBConfig: invalid Buyer.BidIncrementMinPct/MaxPct ({}/{}), resetting to defaults 5/15", BuyerBidIncrementMinPct, BuyerBidIncrementMaxPct);
+        BuyerBidIncrementMinPct = 5;
+        BuyerBidIncrementMaxPct = 15;
+    }
 
     // Flags: item types
     Vendor_Items                   = sConfigMgr->GetOption<bool>  ("AuctionHouseBot.VendorItems"      , false);
