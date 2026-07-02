@@ -2093,7 +2093,7 @@ void AHBConfig::InitializeFromFile()
     BuyerBidIncrementMinPct        = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Buyer.BidIncrementMinPct", 5);
     BuyerBidIncrementMaxPct        = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Buyer.BidIncrementMaxPct", 15);
 
-    if (BuyerBidIncrementMinPct == 0 || BuyerBidIncrementMinPct > BuyerBidIncrementMaxPct)
+    if (BuyerBidIncrementMinPct == 0 || BuyerBidIncrementMinPct > BuyerBidIncrementMaxPct || BuyerBidIncrementMaxPct > 100)
     {
         LOG_WARN("module", "AHBConfig: invalid Buyer.BidIncrementMinPct/MaxPct ({}/{}), resetting to defaults 5/15", BuyerBidIncrementMinPct, BuyerBidIncrementMaxPct);
         BuyerBidIncrementMinPct = 5;

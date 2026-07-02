@@ -506,7 +506,7 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
 
         // Calculate our bid: step up from the current price by a small percentage,
         // rather than leaping anywhere up to our maximum acceptable price.
-        double bidValue = currentPrice + (currentPrice * urand(config->GetBuyerBidIncrementMinPct(), config->GetBuyerBidIncrementMaxPct()) / 100.0);
+        double bidValue = currentPrice + (static_cast<double>(currentPrice) * urand(config->GetBuyerBidIncrementMinPct(), config->GetBuyerBidIncrementMaxPct()) / 100.0);
         uint32 bidPrice = static_cast<uint32>(bidValue);
 
 
