@@ -3509,6 +3509,12 @@ void AHBConfig::LoadPriceOverrides()
         uint64 avgPrice = fields[1].Get<uint64>();
         uint64 minPrice = fields[2].Get<uint64>();
 
+        if (minPrice > avgPrice)
+        {
+            LOG_WARN("module", "AHBConfig: price override for item {} has minPrice {} > avgPrice {}, clamping minPrice to avgPrice", itemId, minPrice, avgPrice);
+            minPrice = avgPrice;
+        }
+
         itemPriceOverrides[itemId] = std::make_tuple(avgPrice, minPrice);
     } while (result->NextRow());
 

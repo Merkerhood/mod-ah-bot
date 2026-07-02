@@ -382,6 +382,11 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         // Get price overrides
         auto [avgPrice, minPrice] = config->GetPriceOverrideForItem(prototype->ItemId);
 
+        if (minPrice > avgPrice)
+        {
+            minPrice = avgPrice;
+        }
+
         uint64 maxPrice = (avgPrice + ( avgPrice - minPrice ));
         uint64 SellPriceValue = maxPrice > 0 ? maxPrice : prototype->SellPrice;
         uint64 BuyPriceValue = avgPrice > 0 ? avgPrice : prototype->BuyPrice;
