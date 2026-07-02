@@ -39,6 +39,7 @@ class AHBConfig;
 class AuctionHouseObject;
 
 struct AuctionEntry;
+struct ItemTemplate;
 class  Player;
 class  WorldSession;
 
@@ -72,7 +73,7 @@ private:
     inline uint32 minValue(uint32 a, uint32 b) { return a <= b ? a : b; };
 
     uint32 getNofAuctions(AHBConfig* config, AuctionHouseObject* auctionHouse, ObjectGuid guid);
-    uint32 getStackCount(AHBConfig* config, uint32 max);
+    uint32 getStackCount(AHBConfig* config, uint32 max, ItemTemplate const* prototype);
     uint32 getElapsedTime(uint32 timeClass);
     uint32 getElement(const std::vector<uint32>& vec, int index, uint32 botId, uint32 maxDup, std::unordered_map<uint32, uint32>& botItemCounts, AHBConfig* config);
 
