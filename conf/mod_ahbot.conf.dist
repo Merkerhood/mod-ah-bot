@@ -163,6 +163,46 @@ AuctionHouseBot.Buyer.BidIncrementMinPct = 5
 AuctionHouseBot.Buyer.BidIncrementMaxPct = 15
 
 ###############################################################################
+# AUCTION HOUSE BOT DYNAMIC PRICING (demand multiplier)
+#
+#    AuctionHouseBot.DynamicPricing.Enable
+#        Enable/Disable a per-item price multiplier that reacts to real human
+#        purchases (never bot or playerbot purchases) and decays back to neutral
+#        (1.0) over time. Applied on top of the priceOverride baseline.
+#    Default 0 (disabled)
+#
+#    AuctionHouseBot.DynamicPricing.BumpPercent
+#        How much a human purchase bumps the item's multiplier, in percent.
+#    Default 8
+#
+#    AuctionHouseBot.DynamicPricing.DecayHalfLifeHours
+#        Hours for a bump to decay halfway back to neutral (1.0).
+#    Default 72
+#
+#    AuctionHouseBot.DynamicPricing.MinMultiplier
+#        Lower clamp for the multiplier.
+#    Default 0.5
+#
+#    AuctionHouseBot.DynamicPricing.MaxMultiplier
+#        Upper clamp for the multiplier.
+#    Default 3.0
+#
+#    AuctionHouseBot.DynamicPricing.BotAccountPrefixes
+#        Comma-separated, case-insensitive account username prefixes treated as
+#        bots (excluded from the demand signal) even though they aren't in
+#        gBotsId. Matches mod-playerbots' random-bot account naming.
+#    Default rndbot
+#
+###############################################################################
+
+AuctionHouseBot.DynamicPricing.Enable = 0
+AuctionHouseBot.DynamicPricing.BumpPercent = 8
+AuctionHouseBot.DynamicPricing.DecayHalfLifeHours = 72
+AuctionHouseBot.DynamicPricing.MinMultiplier = 0.5
+AuctionHouseBot.DynamicPricing.MaxMultiplier = 3.0
+AuctionHouseBot.DynamicPricing.BotAccountPrefixes = rndbot
+
+###############################################################################
 # AUCTION HOUSE BOT FILTERS PART 1
 #
 #    AuctionHouseBot.VendorItems

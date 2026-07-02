@@ -2000,6 +2000,14 @@ void AuctionHouseBot::AdjustPrices(uint32 itemId, uint64& buyoutPrice, uint64& b
         buyoutPrice = std::clamp(buyoutPrice, adjustedMinPrice, maxPrice);
         bidPrice = std::clamp(bidPrice, adjustedMinPrice, maxPrice);
     }
+
+    // Demand multiplier: reacts to real human purchases, decays back to neutral over time.
+    if (config->DynamicPricingEnable)
+    {
+        double demandMultiplier = config->GetEffectiveDemandMultiplier(itemId);
+        buyoutPrice = uint64(buyoutPrice * demandMultiplier);
+        bidPrice = uint64(bidPrice * demandMultiplier);
+    }
 }
 
 void AuctionHouseBot::CleanupOldAuctionHistory()
