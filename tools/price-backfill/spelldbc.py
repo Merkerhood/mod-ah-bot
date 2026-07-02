@@ -1,11 +1,11 @@
 """Parse WotLK 3.3.5a Spell.dbc into a created-item -> recipe map."""
 import struct
+import sys
 from typing import Dict, List, Tuple
 
 CREATE_ITEM_EFFECTS = (24, 66)
 _ID = 0
 _EFFECT = (71, 72, 73)
-_EFFECT_DIE_SIDES = (74, 75, 76)
 _EFFECT_BASE_POINTS = (80, 81, 82)
 _EFFECT_ITEM = (107, 108, 109)
 _REAGENT = range(52, 60)
@@ -35,13 +35,14 @@ def parse_spell_dbc(path: str) -> Dict[int, Tuple[int, List[Tuple[int, int]]]]:
         for ei, ii, bi in zip(_EFFECT, _EFFECT_ITEM, _EFFECT_BASE_POINTS):
             if fields[ei] in CREATE_ITEM_EFFECTS and fields[ii] > 0:
                 out = fields[ii]
-                # In 3.3.5a DBC data the effect's actual value is EffectBasePoints + 1
-                # plus a random roll of up to EffectDieSides (see _EFFECT_DIE_SIDES).
-                # EffectDieSides > 1 means the true yield varies at cast time and can't
-                # be determined from static DBC data -- we use the minimum determinable
-                # yield (basePoints + 1) as a conservative floor rather than guessing
-                # the roll outcome.
+                # 3.3.5a yield is EffectBasePoints + 1 plus a random roll; the
+                # roll isn't determinable from static DBC data, so basePoints + 1
+                # is the minimum yield either way. basePoints is signed -- a
+                # non-positive yield means this isn't a real crafting yield.
                 yield_amt = fields[bi] + 1
+                if yield_amt <= 0:
+                    print("spelldbc: skipping item %d: non-positive yield %d" % (fields[ii], yield_amt), file=sys.stderr)
+                    continue
                 # first recipe with reagents wins; keep deterministic
                 recipes.setdefault(out, (yield_amt, reagents))
     return recipes

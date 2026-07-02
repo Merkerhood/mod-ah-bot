@@ -98,6 +98,14 @@ class YieldExtractionTest(unittest.TestCase):
         cost = recipe_prices.resolve_price(6000, recipes, {3575: 100}, {}, cfg)
         self.assertEqual(cost, 40)
 
+    def test_negative_base_points_recipe_skipped(self):
+        # Negative basePoints (yield <= 0) means this isn't a real crafting
+        # yield -> the recipe is skipped rather than priced as yield 1.
+        rec = {0: 4003, 71: 24, 107: 5003, 52: 3575, 60: 1, 80: -5}
+        path = self._write([_record(rec)])
+        recipes = spelldbc.parse_spell_dbc(path)
+        self.assertNotIn(5003, recipes)
+
 
 if __name__ == "__main__":
     unittest.main()
