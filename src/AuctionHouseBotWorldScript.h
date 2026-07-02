@@ -16,6 +16,7 @@ class AHBot_WorldScript : public WorldScript
 private:
     void DeleteBots();
     void PopulateBots();
+    void LoadSharedOverrides();
 
 public:
     AHBot_WorldScript();

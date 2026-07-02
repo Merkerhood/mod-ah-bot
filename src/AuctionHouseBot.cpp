@@ -1794,29 +1794,9 @@ void AuctionHouseBot::Initialize(AHBConfig* allianceConfig, AHBConfig* hordeConf
     _hordeConfig = hordeConfig;
     _neutralConfig = neutralConfig;
 
-    // Load price overrides once and make them globally available
-    static bool priceOverridesLoaded = false;
-    if (!priceOverridesLoaded)
-    {
-        _neutralConfig->LoadPriceOverrides(); // Load once using the neutral config
-        priceOverridesLoaded = true;
-    }
-
-    // Share the loaded price overrides across all configurations
-    _allianceConfig->itemPriceOverrides = _neutralConfig->itemPriceOverrides;
-    _hordeConfig->itemPriceOverrides = _neutralConfig->itemPriceOverrides;
-
-    // Load per-item count overrides once and make them globally available
-    static bool countOverridesLoaded = false;
-    if (!countOverridesLoaded)
-    {
-        _neutralConfig->LoadCountOverrides(); // Load once using the neutral config
-        countOverridesLoaded = true;
-    }
-
-    // Share the loaded count overrides across all configurations
-    _allianceConfig->itemCountOverrides = _neutralConfig->itemCountOverrides;
-    _hordeConfig->itemCountOverrides = _neutralConfig->itemCountOverrides;
+    // Price and count overrides are loaded and shared across configurations by
+    // AHBot_WorldScript::LoadSharedOverrides(), once per startup/reload cycle,
+    // before any bot is constructed.
 }
 
 // Helper function to join GUIDs into a comma-separated string
