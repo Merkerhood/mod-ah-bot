@@ -3,6 +3,7 @@ import tempfile
 import os
 import unittest
 
+import recipe_prices
 import spelldbc
 
 FIELD_COUNT = 234
@@ -55,6 +56,56 @@ class ParseTest(unittest.TestCase):
         big = {i: (1, [(3575, 1)]) for i in range(1000)}
         big[4389] = (1, [(3575, 1), (10558, 1)])
         spelldbc.validate(big)  # no raise
+
+
+class YieldExtractionTest(unittest.TestCase):
+    """EffectBasePoints (field 80-82) drives the recipe yield instead of a
+    hardcoded 1: yield = basePoints + 1 (WotLK 3.3.5a effect-value formula)."""
+
+    def _write(self, records):
+        fd, path = tempfile.mkstemp(suffix=".dbc")
+        os.write(fd, _dbc(records)); os.close(fd)
+        self.addCleanup(os.remove, path)
+        return path
+
+    def test_yield_one_recipe_unchanged(self):
+        # basePoints unset (0) -> yield 1, same as before this fix.
+        rec = {0: 4001, 71: 24, 107: 5001, 52: 3575, 60: 1}
+        path = self._write([_record(rec)])
+        recipes = spelldbc.parse_spell_dbc(path)
+        yld, reagents = recipes[5001]
+        self.assertEqual(yld, 1)
+        self.assertEqual(reagents, [(3575, 1)])
+
+    def test_fixed_multi_yield_recipe(self):
+        # basePoints=4, dieSides unset (0, non-ambiguous) -> yield 5.
+        rec = {0: 4002, 71: 24, 107: 5002, 52: 3575, 60: 2, 80: 4}
+        path = self._write([_record(rec)])
+        recipes = spelldbc.parse_spell_dbc(path)
+        yld, reagents = recipes[5002]
+        self.assertEqual(yld, 5)
+        self.assertEqual(reagents, [(3575, 2)])
+
+    def test_multi_yield_propagates_to_recursive_recipe_cost(self):
+        # Tier-1: item 5002 crafted from 2x reagent 3575 (cc-priced 100), yield 5
+        # -> per-unit cost = 200 / 5 = 40.
+        rec = {0: 4002, 71: 24, 107: 5002, 52: 3575, 60: 2, 80: 4}
+        path = self._write([_record(rec)])
+        recipes = dict(spelldbc.parse_spell_dbc(path))
+        # Tier-2: item 6000 crafted from 1x item 5002 (the tier-1 output).
+        recipes[6000] = (1, [(5002, 1)])
+        cfg = recipe_prices.DeriveConfig(margin_avg=1.0, margin_min=1.0, max_depth=10)
+        cost = recipe_prices.resolve_price(6000, recipes, {3575: 100}, {}, cfg)
+        self.assertEqual(cost, 40)
+
+    def test_negative_base_points_recipe_skipped(self):
+        # Negative basePoints (yield <= 0) means this isn't a real crafting
+        # yield -> the recipe is skipped rather than priced as yield 1.
+        rec = {0: 4003, 71: 24, 107: 5003, 52: 3575, 60: 1, 80: -5}
+        path = self._write([_record(rec)])
+        recipes = spelldbc.parse_spell_dbc(path)
+        self.assertNotIn(5003, recipes)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -46,6 +46,7 @@ class BuildIdState:
         self.generation = 0
         self.consecutive_404 = 0
         self.sentinel_id = sentinel_id  # known-good item; confirms a real redeploy
+        self._resolving = False  # single-flight guard for the network calls below
 
     def snapshot(self):
         with self._lock:
@@ -65,20 +66,38 @@ class BuildIdState:
             # item that always has data. This stops no-data streaks from triggering
             # a needless buildId re-resolve storm and recovery re-fetch.
             self.consecutive_404 = 0
+            if self._resolving:
+                # Another thread is already running the sentinel/redeploy check;
+                # don't pile on redundant network calls, just proceed on the
+                # buildId as-is, same as a thread that hasn't hit the threshold.
+                return self.build_id
+            self._resolving = True
+            build_id = self.build_id
+
+        # Network I/O happens outside the lock. Only the thread that won the
+        # _resolving flag above reaches here, so this stays single-flight.
+        try:
             try:
-                sentinel = wowauctions.fetch_item(self.build_id, self.sentinel_id)
+                sentinel = wowauctions.fetch_item(build_id, self.sentinel_id)
             except Exception:
-                return self.build_id  # transient error; do not assume redeploy
+                return build_id  # transient error; do not assume redeploy
             if sentinel is not None:
-                return self.build_id  # sentinel still resolves -> buildId is fine
+                return build_id  # sentinel still resolves -> buildId is fine
             # Sentinel 404s under the current buildId -> real redeploy. Re-resolve,
             # and bump the generation only if the buildId actually changed, so the
             # recovery pass stays scoped to items fetched under the stale buildId.
             new_build_id = wowauctions.resolve_build_id()
-            if new_build_id != self.build_id:
-                self.build_id = new_build_id
-                self.generation += 1
-            return self.build_id
+            with self._lock:
+                if new_build_id != self.build_id:
+                    self.build_id = new_build_id
+                    self.generation += 1
+                return self.build_id
+        finally:
+            # Released only after the buildId update above; a thread crossing
+            # the threshold mid-resolve must not start a redundant resolve
+            # against the still-stale buildId.
+            with self._lock:
+                self._resolving = False
 
 
 def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshold, ckpt_fh, ckpt_lock):
@@ -120,8 +139,16 @@ def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshol
     return rec
 
 
-def write_outputs(records, out_sql, skipped_csv, deviations_csv, item_counts_csv=None):
-    rows = [tuple(r["row"]) for r in records if r.get("row")]
+def write_outputs(records, existing, out_sql, skipped_csv, deviations_csv, item_counts_csv=None):
+    # --out-sql defaults to --existing-sql (in-place regeneration): seed from
+    # existing overrides, then update/add only items present in this run's
+    # records, so items absent from candidates.csv aren't silently dropped.
+    merged = dict(existing)
+    for r in records:
+        if r.get("row"):
+            item, avg, mn = r["row"]
+            merged[item] = (avg, mn)
+    rows = [(item, avg, mn) for item, (avg, mn) in merged.items()]
     sqlio.write_override_sql(out_sql, rows)
 
     with open(skipped_csv, "w", newline="", encoding="utf-8") as fh:
@@ -243,8 +270,8 @@ def main():
             run_pass(failed)
 
     records = list(load_checkpoint(args.checkpoint).values())
-    kept, ndev = write_outputs(records, out_sql, args.skipped_csv, args.deviations_csv,
-                               args.item_counts_csv)
+    kept, ndev = write_outputs(records, existing, out_sql, args.skipped_csv,
+                               args.deviations_csv, args.item_counts_csv)
     print("wrote {} rows to {} | {} deviations | build_gen={}".format(
         kept, out_sql, ndev, state.generation))
 
