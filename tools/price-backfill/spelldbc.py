@@ -5,6 +5,8 @@ from typing import Dict, List, Tuple
 CREATE_ITEM_EFFECTS = (24, 66)
 _ID = 0
 _EFFECT = (71, 72, 73)
+_EFFECT_DIE_SIDES = (74, 75, 76)
+_EFFECT_BASE_POINTS = (80, 81, 82)
 _EFFECT_ITEM = (107, 108, 109)
 _REAGENT = range(52, 60)
 _REAGENT_COUNT = range(60, 68)
@@ -30,11 +32,18 @@ def parse_spell_dbc(path: str) -> Dict[int, Tuple[int, List[Tuple[int, int]]]]:
                 reagents.append((item, cnt))
         if not reagents:
             continue
-        for ei, ii in zip(_EFFECT, _EFFECT_ITEM):
+        for ei, ii, bi in zip(_EFFECT, _EFFECT_ITEM, _EFFECT_BASE_POINTS):
             if fields[ei] in CREATE_ITEM_EFFECTS and fields[ii] > 0:
                 out = fields[ii]
+                # In 3.3.5a DBC data the effect's actual value is EffectBasePoints + 1
+                # plus a random roll of up to EffectDieSides (see _EFFECT_DIE_SIDES).
+                # EffectDieSides > 1 means the true yield varies at cast time and can't
+                # be determined from static DBC data -- we use the minimum determinable
+                # yield (basePoints + 1) as a conservative floor rather than guessing
+                # the roll outcome.
+                yield_amt = fields[bi] + 1
                 # first recipe with reagents wins; keep deterministic
-                recipes.setdefault(out, (1, reagents))
+                recipes.setdefault(out, (yield_amt, reagents))
     return recipes
 
 
