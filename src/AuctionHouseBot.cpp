@@ -1002,7 +1002,18 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         if (avgPrice > 0 || minPrice > 0)
         {
             baseBuyoutPrice = avgPrice;
-            baseBidPrice = minPrice;
+            baseBidPrice = baseBuyoutPrice * urand(config->GetMinBidPrice(prototype->Quality), config->GetMaxBidPrice(prototype->Quality)) / 100;
+
+            // Respect the curated floor from the override, but never exceed buyout
+            if (baseBidPrice < minPrice)
+            {
+                baseBidPrice = minPrice;
+            }
+
+            if (baseBidPrice > baseBuyoutPrice)
+            {
+                baseBidPrice = baseBuyoutPrice;
+            }
         }
         else
         {
