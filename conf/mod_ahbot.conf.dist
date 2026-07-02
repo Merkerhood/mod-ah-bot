@@ -157,6 +157,11 @@ AuctionHouseBot.WeightRecent = true
 # Tolerance factor for minimum price (e.g., 0.9 means prices can go down to 90% of minPrice)
 AuctionHouseBot.MinPriceTolerance = 0.95
 
+# Buyer outbid step, as a percentage of the current price, e.g. currentPrice + currentPrice * 5-15%.
+# Must have Min <= Max and Min > 0, otherwise the values are reset to their defaults.
+AuctionHouseBot.Buyer.BidIncrementMinPct = 5
+AuctionHouseBot.Buyer.BidIncrementMaxPct = 15
+
 ###############################################################################
 # AUCTION HOUSE BOT FILTERS PART 1
 #
