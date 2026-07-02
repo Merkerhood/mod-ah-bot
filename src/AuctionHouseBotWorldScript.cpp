@@ -190,15 +190,25 @@ void AHBot_WorldScript::LoadSharedOverrides()
 {
     // Load once using the neutral config, then share across all configurations.
     // Called on startup and on every config reload, so .reload config keeps
-    // mod_auctionhousebot_priceOverride and mod_auctionhousebot_countOverride current.
+    // mod_auctionhousebot_priceOverride, mod_auctionhousebot_countOverride and
+    // mod_auctionhousebot_demand current.
     gNeutralConfig->LoadPriceOverrides();
     gNeutralConfig->LoadCountOverrides();
+    gNeutralConfig->LoadDemandOverrides();
+
+    // Account verdicts depend on the BotAccountPrefixes option; drop them so a
+    // changed prefix list takes effect on reload. Regrows bounded by the
+    // realm's account count.
+    gAccountHumanCache.clear();
 
     gAllianceConfig->itemPriceOverrides = gNeutralConfig->itemPriceOverrides;
     gHordeConfig->itemPriceOverrides    = gNeutralConfig->itemPriceOverrides;
 
     gAllianceConfig->itemCountOverrides = gNeutralConfig->itemCountOverrides;
     gHordeConfig->itemCountOverrides    = gNeutralConfig->itemCountOverrides;
+
+    gAllianceConfig->itemDemand = gNeutralConfig->itemDemand;
+    gHordeConfig->itemDemand    = gNeutralConfig->itemDemand;
 }
 
 void AHBot_WorldScript::PopulateBots()

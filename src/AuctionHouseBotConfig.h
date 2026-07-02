@@ -157,6 +157,7 @@ private:
     void InitializeFromSql(std::set<uint32> botsIds);
 
     std::set<uint32> getCommaSeparatedIntegers(std::string text);
+    std::vector<std::string> getCommaSeparatedStrings(std::string text);
 
     std::vector<uint32> botGUIDs;
     void DecItemCounts(uint32 ahbotItemType);
@@ -313,6 +314,27 @@ public:
     // Buyer outbid increment, as a percentage of the current price
     uint32 BuyerBidIncrementMinPct;
     uint32 BuyerBidIncrementMaxPct;
+
+    // Demand multiplier: per-item price bump that reacts to real human purchases and
+    // decays back to neutral over time (mod_auctionhousebot_demand).
+    struct DemandEntry
+    {
+        double multiplier;
+        int64  lastBump; // unix timestamp
+    };
+
+    std::unordered_map<uint32, DemandEntry> itemDemand;
+
+    bool   DynamicPricingEnable;
+    uint32 DynamicPricingBumpPercent;
+    uint32 DynamicPricingDecayHalfLifeHours;
+    double DynamicPricingMinMultiplier;
+    double DynamicPricingMaxMultiplier;
+    std::vector<std::string> DynamicPricingBotAccountPrefixes;
+
+    void LoadDemandOverrides();
+    double GetEffectiveDemandMultiplier(uint32 itemId) const;
+    void BumpDemand(uint32 itemId);
 
     // Constructors/destructors
     AHBConfig();

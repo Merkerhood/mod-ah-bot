@@ -21,6 +21,7 @@
 #include "Common.h"
 #include "Config.h"
 #include "DatabaseEnv.h"
+#include "GameTime.h"
 #include "Item.h"
 #include "ItemTemplate.h"
 #include "Log.h"
@@ -30,6 +31,9 @@
 
 #include "AuctionHouseBotCommon.h"
 #include "AuctionHouseBotConfig.h"
+
+#include <algorithm>
+#include <cmath>
 
 using namespace std;
 
@@ -2100,6 +2104,45 @@ void AHBConfig::InitializeFromFile()
         BuyerBidIncrementMaxPct = 15;
     }
 
+    // Demand multiplier (reacts to real human purchases, decays back to neutral over time)
+    DynamicPricingEnable            = sConfigMgr->GetOption<bool>  ("AuctionHouseBot.DynamicPricing.Enable"            , false);
+    DynamicPricingBumpPercent       = sConfigMgr->GetOption<uint32>("AuctionHouseBot.DynamicPricing.BumpPercent"       , 8);
+    DynamicPricingDecayHalfLifeHours = sConfigMgr->GetOption<uint32>("AuctionHouseBot.DynamicPricing.DecayHalfLifeHours", 72);
+    DynamicPricingMinMultiplier     = sConfigMgr->GetOption<float> ("AuctionHouseBot.DynamicPricing.MinMultiplier"     , 0.5f);
+    DynamicPricingMaxMultiplier     = sConfigMgr->GetOption<float> ("AuctionHouseBot.DynamicPricing.MaxMultiplier"     , 3.0f);
+    DynamicPricingBotAccountPrefixes = getCommaSeparatedStrings(sConfigMgr->GetOption<std::string>("AuctionHouseBot.DynamicPricing.BotAccountPrefixes", "rndbot"));
+
+    if (DynamicPricingBumpPercent == 0)
+    {
+        LOG_WARN("module", "AHBConfig: AuctionHouseBot.DynamicPricing.BumpPercent must be > 0, using default 8");
+        DynamicPricingBumpPercent = 8;
+    }
+
+    if (DynamicPricingDecayHalfLifeHours == 0)
+    {
+        LOG_WARN("module", "AHBConfig: AuctionHouseBot.DynamicPricing.DecayHalfLifeHours must be > 0, using default 72");
+        DynamicPricingDecayHalfLifeHours = 72;
+    }
+
+    if (DynamicPricingMinMultiplier > 1.0)
+    {
+        LOG_WARN("module", "AHBConfig: AuctionHouseBot.DynamicPricing.MinMultiplier must be <= 1, using default 0.5");
+        DynamicPricingMinMultiplier = 0.5;
+    }
+
+    if (DynamicPricingMaxMultiplier < 1.0)
+    {
+        LOG_WARN("module", "AHBConfig: AuctionHouseBot.DynamicPricing.MaxMultiplier must be >= 1, using default 3.0");
+        DynamicPricingMaxMultiplier = 3.0;
+    }
+
+    if (DynamicPricingMinMultiplier > DynamicPricingMaxMultiplier)
+    {
+        LOG_WARN("module", "AHBConfig: AuctionHouseBot.DynamicPricing.MinMultiplier > MaxMultiplier, resetting both to defaults");
+        DynamicPricingMinMultiplier = 0.5;
+        DynamicPricingMaxMultiplier = 3.0;
+    }
+
     // Flags: item types
     Vendor_Items                   = sConfigMgr->GetOption<bool>  ("AuctionHouseBot.VendorItems"      , false);
     Loot_Items                     = sConfigMgr->GetOption<bool>  ("AuctionHouseBot.LootItems"        , true);
@@ -3502,6 +3545,39 @@ std::set<uint32> AHBConfig::getCommaSeparatedIntegers(std::string text)
     return ret;
 }
 
+std::vector<std::string> AHBConfig::getCommaSeparatedStrings(std::string text)
+{
+    std::string              value;
+    std::stringstream        stream;
+    std::vector<std::string> ret;
+
+    stream.str(text);
+
+    while (std::getline(stream, value, ','))
+    {
+        // trim surrounding whitespace
+        size_t start = value.find_first_not_of(" \t");
+        size_t end   = value.find_last_not_of(" \t");
+
+        if (start == std::string::npos)
+        {
+            continue;
+        }
+
+        value = value.substr(start, end - start + 1);
+
+        // lowercase for case-insensitive prefix comparisons
+        std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+
+        if (!value.empty())
+        {
+            ret.push_back(value);
+        }
+    }
+
+    return ret;
+}
+
 void AHBConfig::LoadPriceOverrides()
 {
     // Full reload semantics: rows deleted from the table must disappear from
@@ -3582,6 +3658,80 @@ uint32 AHBConfig::GetCountOverrideForItem(uint32 itemId) const
     }
     // 0 means "no override" -> caller falls back to the global DuplicatesCount
     return 0;
+}
+
+void AHBConfig::LoadDemandOverrides()
+{
+    // Full reload semantics: rows deleted from the table must disappear from
+    // the in-memory map too, not linger until restart.
+    itemDemand.clear();
+
+    QueryResult result = WorldDatabase.Query("SELECT item, multiplier, last_bump FROM mod_auctionhousebot_demand");
+
+    if (!result)
+    {
+        // Optional feature: an empty/absent table just means everything stays neutral.
+        LOG_INFO("module", "AHBConfig: No demand multipliers in mod_auctionhousebot_demand (optional)");
+        return;
+    }
+
+    do
+    {
+        Field* fields = result->Fetch();
+        uint32 itemId     = fields[0].Get<uint32>();
+        double multiplier = fields[1].Get<double>();
+        int64  lastBump   = fields[2].Get<int64>();
+
+        itemDemand[itemId] = DemandEntry{multiplier, lastBump};
+    } while (result->NextRow());
+
+    LOG_INFO("module", "AHBConfig: Loaded {} demand multipliers from mod_auctionhousebot_demand", itemDemand.size());
+}
+
+double AHBConfig::GetEffectiveDemandMultiplier(uint32 itemId) const
+{
+    auto it = itemDemand.find(itemId);
+    if (it == itemDemand.end())
+    {
+        return 1.0;
+    }
+
+    double halfLifeHours = DynamicPricingDecayHalfLifeHours > 0 ? double(DynamicPricingDecayHalfLifeHours) : 72.0;
+    double hoursSince = double(GameTime::GetGameTime().count() - it->second.lastBump) / 3600.0;
+
+    if (hoursSince < 0.0)
+    {
+        // Clock moved backwards (e.g. restored DB snapshot) - treat as "just bumped".
+        hoursSince = 0.0;
+    }
+
+    double effective = 1.0 + (it->second.multiplier - 1.0) * std::pow(0.5, hoursSince / halfLifeHours);
+
+    if (std::fabs(effective - 1.0) < 0.01)
+    {
+        return 1.0;
+    }
+
+    return effective;
+}
+
+void AHBConfig::BumpDemand(uint32 itemId)
+{
+    double effective = GetEffectiveDemandMultiplier(itemId);
+    double bumped = effective * (1.0 + double(DynamicPricingBumpPercent) / 100.0);
+    bumped = std::clamp(bumped, DynamicPricingMinMultiplier, DynamicPricingMaxMultiplier);
+
+    int64 now = GameTime::GetGameTime().count();
+
+    itemDemand[itemId] = DemandEntry{bumped, now};
+
+    WorldDatabase.Execute("REPLACE INTO `mod_auctionhousebot_demand` (`item`, `multiplier`, `last_bump`) VALUES ({}, {}, {})",
+        itemId, bumped, now);
+
+    if (DebugOut)
+    {
+        LOG_INFO("module", "AHBConfig: Bumped demand for item {} to {} (last_bump={})", itemId, bumped, now);
+    }
 }
 
 void AHBConfig::LoadBotGUIDs()

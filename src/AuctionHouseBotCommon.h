@@ -21,6 +21,7 @@
 #define AUCTION_HOUSE_BOT_COMMON_H
 
 #include <set>
+#include <unordered_map>
 
 #include "Common.h"
 
@@ -103,5 +104,9 @@ enum class AHBotCommand : uint32
 
 extern std::set<uint32>           gBotsId; // Active bots players ids
 extern std::set<AuctionHouseBot*> gBots;   // Active bots
+
+// Demand multiplier: account id -> "is a real human" verdict, cached to avoid a
+// LoginDatabase round trip on every completed auction. World thread only, no locking.
+extern std::unordered_map<uint32, bool> gAccountHumanCache;
 
 #endif // AUCTION_HOUSE_BOT_COMMON_H
