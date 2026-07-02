@@ -3494,6 +3494,10 @@ std::set<uint32> AHBConfig::getCommaSeparatedIntegers(std::string text)
 
 void AHBConfig::LoadPriceOverrides()
 {
+    // Full reload semantics: rows deleted from the table must disappear from
+    // the in-memory map too, not linger until restart.
+    itemPriceOverrides.clear();
+
     QueryResult result = WorldDatabase.Query("SELECT item, avgPrice, minPrice FROM mod_auctionhousebot_priceOverride");
 
     if (!result)
@@ -3534,6 +3538,10 @@ std::tuple<uint64, uint64> AHBConfig::GetPriceOverrideForItem(uint32 itemId) con
 
 void AHBConfig::LoadCountOverrides()
 {
+    // Full reload semantics: rows deleted from the table must disappear from
+    // the in-memory map too, not linger until restart.
+    itemCountOverrides.clear();
+
     QueryResult result = WorldDatabase.Query("SELECT item, targetCount FROM mod_auctionhousebot_countOverride");
 
     if (!result)
