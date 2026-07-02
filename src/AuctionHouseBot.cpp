@@ -796,6 +796,20 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         uint32 itemID = itemsToSell[cnt];
 
+        // Priority-list picks (price-override items) must respect their per-item
+        // count override too, mirroring getElement()'s cap for random picks.
+        // A capped pick falls through to the rarity-tier selection below.
+        if (itemID != 0)
+        {
+            uint32 effectiveMax = config->DuplicatesCount;
+            uint32 countOverride = config->GetCountOverrideForItem(itemID);
+            if (countOverride > 0)
+                effectiveMax = countOverride;
+
+            if (effectiveMax > 0 && botItemCounts[itemID] >= effectiveMax)
+                itemID = 0;
+        }
+
         // Update Auctions count for current Bot
         uint32 botAuctionsCount = nbOfAuctions + cnt;
 
