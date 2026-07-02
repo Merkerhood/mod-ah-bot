@@ -128,6 +128,8 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
         gHordeConfig->Initialize(gBotsId);
         gNeutralConfig->Initialize(gBotsId);
 
+        LoadSharedOverrides();
+
         // Start again the bots
         PopulateBots();
     }
@@ -144,6 +146,8 @@ void AHBot_WorldScript::OnStartup()
     gAllianceConfig->Initialize(gBotsId);
     gHordeConfig->Initialize   (gBotsId);
     gNeutralConfig->Initialize (gBotsId);
+
+    LoadSharedOverrides();
 
     //
     // Starts the bots
@@ -181,6 +185,21 @@ void AHBot_WorldScript::DeleteBots()
     }
 }
 
+
+void AHBot_WorldScript::LoadSharedOverrides()
+{
+    // Load once using the neutral config, then share across all configurations.
+    // Called on startup and on every config reload, so .reload config keeps
+    // mod_auctionhousebot_priceOverride and mod_auctionhousebot_countOverride current.
+    gNeutralConfig->LoadPriceOverrides();
+    gNeutralConfig->LoadCountOverrides();
+
+    gAllianceConfig->itemPriceOverrides = gNeutralConfig->itemPriceOverrides;
+    gHordeConfig->itemPriceOverrides    = gNeutralConfig->itemPriceOverrides;
+
+    gAllianceConfig->itemCountOverrides = gNeutralConfig->itemCountOverrides;
+    gHordeConfig->itemCountOverrides    = gNeutralConfig->itemCountOverrides;
+}
 
 void AHBot_WorldScript::PopulateBots()
 {

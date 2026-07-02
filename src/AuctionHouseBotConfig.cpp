@@ -3494,6 +3494,10 @@ std::set<uint32> AHBConfig::getCommaSeparatedIntegers(std::string text)
 
 void AHBConfig::LoadPriceOverrides()
 {
+    // Full reload semantics: rows deleted from the table must disappear from
+    // the in-memory map too, not linger until restart.
+    itemPriceOverrides.clear();
+
     QueryResult result = WorldDatabase.Query("SELECT item, avgPrice, minPrice FROM mod_auctionhousebot_priceOverride");
 
     if (!result)
@@ -3508,6 +3512,12 @@ void AHBConfig::LoadPriceOverrides()
         uint32 itemId = fields[0].Get<uint32>();
         uint64 avgPrice = fields[1].Get<uint64>();
         uint64 minPrice = fields[2].Get<uint64>();
+
+        if (minPrice > avgPrice)
+        {
+            LOG_WARN("module", "AHBConfig: price override for item {} has minPrice {} > avgPrice {}, clamping minPrice to avgPrice", itemId, minPrice, avgPrice);
+            minPrice = avgPrice;
+        }
 
         itemPriceOverrides[itemId] = std::make_tuple(avgPrice, minPrice);
     } while (result->NextRow());
@@ -3528,6 +3538,10 @@ std::tuple<uint64, uint64> AHBConfig::GetPriceOverrideForItem(uint32 itemId) con
 
 void AHBConfig::LoadCountOverrides()
 {
+    // Full reload semantics: rows deleted from the table must disappear from
+    // the in-memory map too, not linger until restart.
+    itemCountOverrides.clear();
+
     QueryResult result = WorldDatabase.Query("SELECT item, targetCount FROM mod_auctionhousebot_countOverride");
 
     if (!result)
