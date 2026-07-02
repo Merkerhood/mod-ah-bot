@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import threading
+import time
 import unittest
 from datetime import datetime
 
@@ -202,6 +203,72 @@ class WriteOutputsMergeTest(unittest.TestCase):
         self.assertEqual(result[99], (500, 400))
         # item 1 was re-derived this run -- the new values win.
         self.assertEqual(result[1], (20, 15))
+
+
+class NoteResultLockScopeTest(unittest.TestCase):
+    """The lock must protect shared-state reads/writes only, not the
+    sentinel-fetch / resolve_build_id network calls, so a redeploy-sentinel
+    check on one thread doesn't collapse concurrency to 1 for everyone else."""
+
+    def setUp(self):
+        self._orig_fetch = wowauctions.fetch_item
+        self._orig_resolve = wowauctions.resolve_build_id
+
+    def tearDown(self):
+        wowauctions.fetch_item = self._orig_fetch
+        wowauctions.resolve_build_id = self._orig_resolve
+
+    def test_lock_not_held_during_network_call(self):
+        entered = threading.Event()
+        release = threading.Event()
+
+        def slow_fetch(build_id, item_id):
+            entered.set()
+            release.wait(2)
+            return None  # sentinel 404s -> proceeds to resolve_build_id
+
+        wowauctions.fetch_item = slow_fetch
+        wowauctions.resolve_build_id = lambda: "OLD"  # buildId unchanged
+
+        state = backfill.BuildIdState("OLD", sentinel_id=4389)
+        t = threading.Thread(target=lambda: state.note_result(True, 1))
+        t.start()
+        self.assertTrue(entered.wait(2), "sentinel fetch never started")
+        # The sentinel fetch is in flight; the lock must be free so other
+        # threads (e.g. via snapshot()) are not blocked for the network RTT.
+        acquired = state._lock.acquire(timeout=1)
+        self.assertTrue(acquired, "lock is still held during network I/O")
+        state._lock.release()
+        release.set()
+        t.join(2)
+
+    def test_only_one_thread_performs_reresolve(self):
+        resolve_calls = []
+        call_lock = threading.Lock()
+
+        def counting_resolve():
+            with call_lock:
+                resolve_calls.append(1)
+            time.sleep(0.05)
+            return "NEW"
+
+        wowauctions.fetch_item = lambda build_id, item_id: None  # always 404
+        wowauctions.resolve_build_id = counting_resolve
+
+        state = backfill.BuildIdState("OLD", sentinel_id=4389)
+        threads = [threading.Thread(target=lambda: state.note_result(True, 1))
+                   for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(2)
+
+        # Even though every thread crossed the threshold concurrently, only
+        # one should have actually re-resolved; the rest proceed on the
+        # (old, then updated) buildId per the single-flight design.
+        self.assertEqual(len(resolve_calls), 1)
+        self.assertEqual(state.build_id, "NEW")
+        self.assertEqual(state.generation, 1)
 
 
 if __name__ == "__main__":

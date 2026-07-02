@@ -46,6 +46,7 @@ class BuildIdState:
         self.generation = 0
         self.consecutive_404 = 0
         self.sentinel_id = sentinel_id  # known-good item; confirms a real redeploy
+        self._resolving = False  # single-flight guard for the network calls below
 
     def snapshot(self):
         with self._lock:
@@ -65,16 +66,32 @@ class BuildIdState:
             # item that always has data. This stops no-data streaks from triggering
             # a needless buildId re-resolve storm and recovery re-fetch.
             self.consecutive_404 = 0
+            if self._resolving:
+                # Another thread is already running the sentinel/redeploy check;
+                # don't pile on redundant network calls, just proceed on the
+                # buildId as-is, same as a thread that hasn't hit the threshold.
+                return self.build_id
+            self._resolving = True
+            build_id = self.build_id
+
+        # Network I/O happens outside the lock. Only the thread that won the
+        # _resolving flag above reaches here, so this stays single-flight.
+        try:
             try:
-                sentinel = wowauctions.fetch_item(self.build_id, self.sentinel_id)
+                sentinel = wowauctions.fetch_item(build_id, self.sentinel_id)
             except Exception:
-                return self.build_id  # transient error; do not assume redeploy
+                return build_id  # transient error; do not assume redeploy
             if sentinel is not None:
-                return self.build_id  # sentinel still resolves -> buildId is fine
+                return build_id  # sentinel still resolves -> buildId is fine
             # Sentinel 404s under the current buildId -> real redeploy. Re-resolve,
             # and bump the generation only if the buildId actually changed, so the
             # recovery pass stays scoped to items fetched under the stale buildId.
             new_build_id = wowauctions.resolve_build_id()
+        finally:
+            with self._lock:
+                self._resolving = False
+
+        with self._lock:
             if new_build_id != self.build_id:
                 self.build_id = new_build_id
                 self.generation += 1
