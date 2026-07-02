@@ -64,6 +64,19 @@ The default quotas of all the auction houses for non trade goods items are:
 
 The sum of the percentage for these categories must always be 100, or otherwise the defaults values will be used and the modifications will not be accepted.
 
+## Per-item listing count override (optional)
+
+The `mod_auctionhousebot_countOverride` table (`item`, `targetCount`) lets the bot list a
+per-item quantity that mirrors a real economy instead of the uniform `DuplicatesCount`.
+When an item has a row, `targetCount` is used as the maximum number of that item the bot
+lists, **replacing** the global `DuplicatesCount` for that item.
+
+Note: because the override replaces `DuplicatesCount` for that item, an override applies
+even when `DuplicatesCount` is `0` (globally "unlimited") - overridden items are then capped
+at their `targetCount`. Items with no row keep the global behaviour, and an empty/absent
+table is a no-op. The shipped data is derived from ChromieCraft auction liquidity
+(`targetCount = min(observed_listings, 50)`).
+
 ## Credits
 
 - Ayase: ported the bot to AzerothCore

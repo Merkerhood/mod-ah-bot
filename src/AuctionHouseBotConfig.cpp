@@ -3526,6 +3526,40 @@ std::tuple<uint64, uint64> AHBConfig::GetPriceOverrideForItem(uint32 itemId) con
     return std::make_tuple(0, 0);
 }
 
+void AHBConfig::LoadCountOverrides()
+{
+    QueryResult result = WorldDatabase.Query("SELECT item, targetCount FROM mod_auctionhousebot_countOverride");
+
+    if (!result)
+    {
+        // Optional feature: an empty/absent table just means the bot keeps using DuplicatesCount.
+        LOG_INFO("module", "AHBConfig: No count overrides in mod_auctionhousebot_countOverride (optional)");
+        return;
+    }
+
+    do
+    {
+        Field* fields = result->Fetch();
+        uint32 itemId = fields[0].Get<uint32>();
+        uint32 targetCount = fields[1].Get<uint32>();
+
+        itemCountOverrides[itemId] = targetCount;
+    } while (result->NextRow());
+
+    LOG_INFO("module", "AHBConfig: Loaded {} count overrides from mod_auctionhousebot_countOverride", itemCountOverrides.size());
+}
+
+uint32 AHBConfig::GetCountOverrideForItem(uint32 itemId) const
+{
+    auto it = itemCountOverrides.find(itemId);
+    if (it != itemCountOverrides.end())
+    {
+        return it->second;
+    }
+    // 0 means "no override" -> caller falls back to the global DuplicatesCount
+    return 0;
+}
+
 void AHBConfig::LoadBotGUIDs()
 {
     std::string guidsStr = sConfigMgr->GetOption<std::string>("AuctionHouseBot.GUIDs", "0");
