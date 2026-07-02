@@ -20,3 +20,5 @@ AHBConfig* gNeutralConfig  = new AHBConfig(7);
 
 std::set<uint32>           gBotsId;
 std::set<AuctionHouseBot*> gBots;
+
+std::unordered_map<uint32, bool> gAccountHumanCache;

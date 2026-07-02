@@ -3,11 +3,73 @@
  */
 
 #include "AuctionHouseMgr.h"
+#include "CharacterCache.h"
+#include "Field.h"
 #include "GameTime.h"
+#include "QueryResult.h"
 
 #include "AuctionHouseBot.h"
 #include "AuctionHouseBotCommon.h"
 #include "AuctionHouseBotAuctionHouseScript.h"
+
+#include <algorithm>
+
+// Demand multiplier human detection: a buyer counts as human when their character isn't
+// one of the bot's own gBotsId characters and their account isn't a mod-playerbots random
+// bot (there's no compile-time dependency on mod-playerbots, so this is done by account
+// username prefix instead). Resolution failures return false ("don't bump") rather than
+// guessing.
+static bool IsHumanBuyer(ObjectGuid buyerGuid, AHBConfig* config)
+{
+    if (buyerGuid.IsEmpty())
+    {
+        return false;
+    }
+
+    if (gBotsId.find(buyerGuid.GetCounter()) != gBotsId.end())
+    {
+        return false;
+    }
+
+    uint32 accountId = sCharacterCache->GetCharacterAccountIdByGuid(buyerGuid);
+
+    if (accountId == 0)
+    {
+        return false;
+    }
+
+    auto cacheIt = gAccountHumanCache.find(accountId);
+    if (cacheIt != gAccountHumanCache.end())
+    {
+        return cacheIt->second;
+    }
+
+    QueryResult result = LoginDatabase.Query("SELECT username FROM account WHERE id = {}", accountId);
+
+    if (!result)
+    {
+        // Ambiguous resolution: don't cache a guess, just don't bump this time.
+        return false;
+    }
+
+    std::string username = result->Fetch()[0].Get<std::string>();
+    std::transform(username.begin(), username.end(), username.begin(), ::tolower);
+
+    bool isHuman = true;
+
+    for (const std::string& prefix : config->DynamicPricingBotAccountPrefixes)
+    {
+        if (!prefix.empty() && username.compare(0, prefix.size(), prefix) == 0)
+        {
+            isHuman = false;
+            break;
+        }
+    }
+
+    gAccountHumanCache[accountId] = isHuman;
+
+    return isHuman;
+}
 
 AHBot_AuctionHouseScript::AHBot_AuctionHouseScript() : AuctionHouseScript("AHBot_AuctionHouseScript", {
     AUCTIONHOUSEHOOK_ON_BEFORE_AUCTIONHOUSEMGR_SEND_AUCTION_SUCCESSFUL_MAIL,
@@ -232,6 +294,12 @@ void AHBot_AuctionHouseScript::OnAuctionSuccessful(AuctionHouseObject* /*ah*/, A
     }
 
     config->UpdateItemStats(auction->item_template, auction->itemCount, auction->buyout);
+
+    // Demand multiplier: only real human purchases nudge the price up.
+    if (config->DynamicPricingEnable && IsHumanBuyer(auction->bidder, config))
+    {
+        config->BumpDemand(auction->item_template);
+    }
 
     // Insert record into auction history table
     std::string auctionType = (auction->bid > 0) ? "bid" : "buyout";
