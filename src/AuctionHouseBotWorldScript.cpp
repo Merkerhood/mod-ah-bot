@@ -196,6 +196,11 @@ void AHBot_WorldScript::LoadSharedOverrides()
     gNeutralConfig->LoadCountOverrides();
     gNeutralConfig->LoadDemandOverrides();
 
+    // Account verdicts depend on the BotAccountPrefixes option; drop them so a
+    // changed prefix list takes effect on reload. Regrows bounded by the
+    // realm's account count.
+    gAccountHumanCache.clear();
+
     gAllianceConfig->itemPriceOverrides = gNeutralConfig->itemPriceOverrides;
     gHordeConfig->itemPriceOverrides    = gNeutralConfig->itemPriceOverrides;
 
