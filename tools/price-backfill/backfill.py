@@ -120,8 +120,16 @@ def process_id(item_id, state, cfg, existing, now, rate_delay, redeploy_threshol
     return rec
 
 
-def write_outputs(records, out_sql, skipped_csv, deviations_csv, item_counts_csv=None):
-    rows = [tuple(r["row"]) for r in records if r.get("row")]
+def write_outputs(records, existing, out_sql, skipped_csv, deviations_csv, item_counts_csv=None):
+    # --out-sql defaults to --existing-sql (in-place regeneration): seed from
+    # existing overrides, then update/add only items present in this run's
+    # records, so items absent from candidates.csv aren't silently dropped.
+    merged = dict(existing)
+    for r in records:
+        if r.get("row"):
+            item, avg, mn = r["row"]
+            merged[item] = (avg, mn)
+    rows = [(item, avg, mn) for item, (avg, mn) in merged.items()]
     sqlio.write_override_sql(out_sql, rows)
 
     with open(skipped_csv, "w", newline="", encoding="utf-8") as fh:
@@ -243,8 +251,8 @@ def main():
             run_pass(failed)
 
     records = list(load_checkpoint(args.checkpoint).values())
-    kept, ndev = write_outputs(records, out_sql, args.skipped_csv, args.deviations_csv,
-                               args.item_counts_csv)
+    kept, ndev = write_outputs(records, existing, out_sql, args.skipped_csv,
+                               args.deviations_csv, args.item_counts_csv)
     print("wrote {} rows to {} | {} deviations | build_gen={}".format(
         kept, out_sql, ndev, state.generation))
 

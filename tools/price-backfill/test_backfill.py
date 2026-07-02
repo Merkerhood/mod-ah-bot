@@ -7,6 +7,7 @@ import unittest
 from datetime import datetime
 
 import backfill
+import sqlio
 import transform
 import wowauctions
 
@@ -170,6 +171,37 @@ class NoteResultTest(unittest.TestCase):
         self.assertEqual(state.consecutive_404, 2)
         state.note_result(False, 3)
         self.assertEqual(state.consecutive_404, 0)
+
+
+class WriteOutputsMergeTest(unittest.TestCase):
+    """--out-sql defaults to --existing-sql (in-place regeneration): an item
+    already overridden must survive even if it's absent from this run's
+    candidates, instead of silently reverting to default AH pricing."""
+
+    def setUp(self):
+        fd, self.out_sql = tempfile.mkstemp(suffix=".sql")
+        os.close(fd)
+        fd, self.skipped = tempfile.mkstemp(suffix=".csv")
+        os.close(fd)
+        fd, self.deviations = tempfile.mkstemp(suffix=".csv")
+        os.close(fd)
+
+    def tearDown(self):
+        for path in (self.out_sql, self.skipped, self.deviations):
+            if os.path.exists(path):
+                os.remove(path)
+
+    def test_existing_item_absent_from_candidates_survives(self):
+        existing = {99: (500, 400), 1: (10, 5)}
+        records = [{"item": 1, "row": [1, 20, 15], "reason": None}]
+        backfill.write_outputs(records, existing, self.out_sql, self.skipped,
+                                self.deviations)
+        result = sqlio.parse_override_sql(self.out_sql)
+        # item 99 was not part of this run's candidates but is a pre-existing
+        # override -- it must be carried through unchanged.
+        self.assertEqual(result[99], (500, 400))
+        # item 1 was re-derived this run -- the new values win.
+        self.assertEqual(result[1], (20, 15))
 
 
 if __name__ == "__main__":
