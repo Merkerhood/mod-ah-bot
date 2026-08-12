@@ -331,14 +331,21 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
 
     // Only successful operations (bid or buyout) consume the per-interval
     // budget; skipped auctions used to eat it and could starve the whole run.
+    // Evaluations are still bounded so an AH with a huge number of player
+    // auctions cannot make a skip-heavy cycle scan all of them; the shuffle
+    // keeps the sample fair across cycles, so this reintroduces no starvation.
     uint32 opsDone = 0;
+    uint32 evaluated = 0;
+    uint32 const maxEvaluations = bidsPerInterval * 100;
 
     for (uint32 auctionID : auctionsGuidsToConsider)
     {
-        if (opsDone >= bidsPerInterval)
+        if (opsDone >= bidsPerInterval || evaluated >= maxEvaluations)
         {
             break;
         }
+
+        evaluated++;
 
         AuctionEntry* auction = auctionHouseObject->GetAuction(auctionID);
 
