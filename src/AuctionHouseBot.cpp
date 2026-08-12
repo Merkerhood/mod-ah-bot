@@ -262,7 +262,8 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         return;
     }
 
-    // Retrieve items not owned by the bot and not bought/bidded on by the bot
+    // Retrieve items not owned by the bot. Auctions the bot already leads stay
+    // included so it can still escalate to a buyout instead of abandoning them.
     std::string botGUIDsStr = JoinGUIDs(config->GetBotGUIDs());
     uint32 auctionHouseID = config->GetAHID();
 
@@ -271,7 +272,7 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         LOG_INFO("module", "AHBot [{}]: Querying auction house {} for items not owned by bots", _id, auctionHouseID);
     }
 
-    QueryResult ahContentQueryResult = CharacterDatabase.Query("SELECT id FROM auctionhouse WHERE  houseid = {} AND itemowner NOT IN ({}) AND buyguid NOT IN ({})", auctionHouseID, botGUIDsStr, botGUIDsStr);
+    QueryResult ahContentQueryResult = CharacterDatabase.Query("SELECT id FROM auctionhouse WHERE  houseid = {} AND itemowner NOT IN ({})", auctionHouseID, botGUIDsStr);
 
     if (!ahContentQueryResult || ahContentQueryResult->GetRowCount() == 0)
     {
@@ -280,13 +281,18 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
 
     // Fetches content of selected AH to look for possible bids
     AuctionHouseObject* auctionHouseObject = sAuctionMgr->GetAuctionsMap(config->GetAHFID());
-    std::set<uint32> auctionsGuidsToConsider;
+    std::vector<uint32> auctionsGuidsToConsider;
 
     do
     {
         uint32 auctionGuid = ahContentQueryResult->Fetch()->Get<uint32>();
-        auctionsGuidsToConsider.insert(auctionGuid);
+        auctionsGuidsToConsider.push_back(auctionGuid);
     } while (ahContentQueryResult->NextRow());
+
+    // Randomized order: a fixed lowest-ID-first scan lets permanently
+    // overpriced auctions occupy the head of the queue and starve newer
+    // listings out of consideration entirely.
+    std::shuffle(auctionsGuidsToConsider.begin(), auctionsGuidsToConsider.end(), std::mt19937(std::random_device()()));
 
     if (config->DebugOutBuyer)
     {
@@ -323,21 +329,18 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         LOG_INFO("module", "AHBot [{}]: Considering {} auctions per interval to bid on.", _id, bidsPerInterval);
     }
 
-    for (uint32 count = 1; count <= bidsPerInterval && !auctionsGuidsToConsider.empty(); ++count)
+    // Only successful operations (bid or buyout) consume the per-interval
+    // budget; skipped auctions used to eat it and could starve the whole run.
+    uint32 opsDone = 0;
+
+    for (uint32 auctionID : auctionsGuidsToConsider)
     {
-        if (auctionsGuidsToConsider.empty()) {
-            return;
+        if (opsDone >= bidsPerInterval)
+        {
+            break;
         }
 
-        std::set<uint32>::iterator it = auctionsGuidsToConsider.begin();
-        std::advance(it, 0);
-        uint32 auctionID = *it;
         AuctionEntry* auction = auctionHouseObject->GetAuction(auctionID);
-
-        //
-        // Prevent to bid again on the same auction
-        //
-        auctionsGuidsToConsider.erase(it);
 
         if (!auction)
         {
@@ -388,6 +391,16 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         }
 
         uint64 maxPrice = (avgPrice + ( avgPrice - minPrice ));
+
+        // A degenerate override (minPrice == avgPrice) collapses the cap to the
+        // exact average while the seller lists at avg +-10%, so ordinary player
+        // undercuts of the bot's own listings would never be bought. Guarantee
+        // some headroom above the average.
+        if (avgPrice > 0 && maxPrice < avgPrice * 115 / 100)
+        {
+            maxPrice = avgPrice * 115 / 100;
+        }
+
         uint64 SellPriceValue = maxPrice > 0 ? maxPrice : prototype->SellPrice;
         uint64 BuyPriceValue = avgPrice > 0 ? avgPrice : prototype->BuyPrice;
 
@@ -504,6 +517,16 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
             continue;
         }
 
+        // If the bot already leads this auction it must never outbid itself;
+        // the only remaining move is escalating to a buyout when that still
+        // fits the cap, otherwise the auction just runs out at the current bid.
+        bool botAlreadyLeads = auction->bidder && gBotsId.find(auction->bidder.GetCounter()) != gBotsId.end();
+
+        if (botAlreadyLeads && (auction->buyout == 0 || auction->buyout > maximumBid))
+        {
+            continue;
+        }
+
         // Calculate our bid: step up from the current price by a small percentage,
         // rather than leaping anywhere up to our maximum acceptable price.
         double bidValue = currentPrice + (static_cast<double>(currentPrice) * urand(config->GetBuyerBidIncrementMinPct(), config->GetBuyerBidIncrementMaxPct()) / 100.0);
@@ -539,7 +562,7 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         // Check whether we do normal bid, or buyout
         //
 
-        if ((bidPrice < auction->buyout) || (auction->buyout == 0))
+        if (!botAlreadyLeads && ((bidPrice < auction->buyout) || (auction->buyout == 0)))
         {
             //
             // Perform a new bid on the auction
@@ -571,6 +594,8 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
             {
                 LOG_INFO("module", "AHBot [{}]: New bid, itemid={}, ah={}, auctionId={} item={}, start={}, current={}, buyout={}", _id, prototype->ItemId, auction->GetHouseId(), auction->Id, auction->item_template, auction->startbid, currentPrice, auction->buyout);
             }
+
+            opsDone++;
         }
         else
         {
@@ -608,6 +633,8 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
             {
                 LOG_INFO("module", "AHBot [{}]: Bought , itemid={}, ah={}, item={}, start={}, current={}, buyout={}", _id, prototype->ItemId, AuctionHouseId(auction->GetHouseId()), auction->item_template, auction->startbid, currentPrice, auction->buyout);
             }
+
+            opsDone++;
         }
     }
 
