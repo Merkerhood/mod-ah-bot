@@ -264,7 +264,15 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
 
     // Retrieve items not owned by the bot. Auctions the bot already leads stay
     // included so it can still escalate to a buyout instead of abandoning them.
-    std::string botGUIDsStr = JoinGUIDs(config->GetBotGUIDs());
+    // The exclusion list comes from the resolved bot characters (gBotsId), not
+    // the raw config GUID list: in account-only mode the latter is empty and
+    // would render an invalid "NOT IN ()" clause.
+    if (gBotsId.empty())
+    {
+        return;
+    }
+
+    std::string botGUIDsStr = JoinGUIDs(std::vector<uint32>(gBotsId.begin(), gBotsId.end()));
     uint32 auctionHouseID = config->GetAHID();
 
     if (config->DebugOutBuyer)
