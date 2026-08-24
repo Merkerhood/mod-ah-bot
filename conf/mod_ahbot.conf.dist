@@ -133,7 +133,6 @@ AuctionHouseBot.DuplicatesCount = 0
 AuctionHouseBot.RestockBatchSize = 5
 AuctionHouseBot.DivisibleStacks = 0
 AuctionHouseBot.ElapsingTimeClass = 1
-AuctionHouseBot.MinItems = 10000
 AuctionHouseBot.MaxItems = 15000
 AuctionHouseBot.MaxStackSize = 20
 

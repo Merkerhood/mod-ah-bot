@@ -1728,24 +1728,13 @@ void AuctionHouseBot::Commands(AHBotCommand command, uint32 ahMapID, uint32 col,
 
         break;
     }
-    case AHBotCommand::minitems:
-    {
-        char * param1   = strtok(args, " ");
-        uint32 minItems = (uint32) strtoul(param1, NULL, 0);
-
-        WorldDatabase.Execute("UPDATE mod_auctionhousebot SET minitems = '{}' WHERE auctionhouse = '{}'", minItems, ahMapID);
-
-        config->SetMinItems(minItems);
-
-        break;
-    }
     case AHBotCommand::maxitems:
     {
         char * param1   = strtok(args, " ");
         uint32 maxItems = (uint32) strtoul(param1, NULL, 0);
 
-        WorldDatabase.Execute("UPDATE mod_auctionhousebot SET maxitems = '{}' WHERE auctionhouse = '{}'", maxItems, ahMapID);
-
+        // Runtime only: the seller reads its ceiling from AuctionHouseBot.MaxItems,
+        // so this lasts until the next restart and is not persisted anywhere.
         config->SetMaxItems(maxItems);
         config->CalculatePercents();
         break;

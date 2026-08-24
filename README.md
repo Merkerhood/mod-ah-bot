@@ -145,8 +145,10 @@ faction auction house.
   how full the market is, so it keeps a background of listings even when many players are
   online (without it, player auctions count toward the total and the SQL max values must be
   raised a lot).
-- `MinItems` / `MaxItems` bound the total number of auctions; `DuplicatesCount` caps
-  duplicate stacks of a single item (per-item overrides can raise or lower this).
+- `MaxItems` bounds the total number of auctions the bots keep listed; `DuplicatesCount`
+  caps duplicate stacks of a single item (per-item overrides can raise or lower this).
+  Both come from the conf file - the `minitems` / `maxitems` columns that used to live in
+  `mod_auctionhousebot` were never read and have been dropped.
 
 ### Item filtering
 
