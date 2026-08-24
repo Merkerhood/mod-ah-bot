@@ -821,7 +821,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     std::vector<uint32> itemCounts(14, 0);
 
     // Get prioritized item IDs
-    std::vector<uint32> itemsToSell = GetItemsToSell(config, AHBplayer->GetGUID(), itemsInAH);
+    std::vector<uint32> itemsToSell = GetItemsToSell(config, AHBplayer->GetGUID(), itemsInAH, botItemCounts);
 
     // Loop variables
     uint32 nbSold    = 0; // Tracing counter
@@ -1247,7 +1247,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 // Get Prioritized ItemIDs
 // =============================================================================
 
-std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGuid /* botGuid */, const std::unordered_set<uint32>& itemsInAH)
+std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGuid /* botGuid */, const std::unordered_set<uint32>& itemsInAH, const std::unordered_map<uint32, uint32>& botItemCounts)
 {
     //std::vector<uint32> prioritizedItemIDs;
     std::vector<uint32> allItemIDs;
@@ -1286,17 +1286,74 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
     std::vector<uint32> yellowItemsBin(config->YellowItemsBin.begin(), config->YellowItemsBin.end());
 
 
-    // 1. Items with price overrides that are not listed by the bot yet (randomized order)
+    // How many stacks of an item are missing from its target count. The target is
+    // the per-item countOverride, else the global DuplicatesCount, else 1 stack -
+    // the same precedence the listing cap in Sell() applies. Capped by
+    // RestockBatchSize so a single item cannot eat the whole ItemsPerCycle budget.
+    auto missingStacks = [&](uint32 itemID) -> uint32
+    {
+        uint32 target = config->GetCountOverrideForItem(itemID);
+
+        if (target == 0)
+        {
+            target = config->DuplicatesCount;
+        }
+
+        if (target == 0)
+        {
+            target = 1;
+        }
+
+        auto listed = botItemCounts.find(itemID);
+        uint32 current = (listed != botItemCounts.end()) ? listed->second : 0;
+
+        if (current >= target)
+        {
+            return 0;
+        }
+
+        uint32 batch = config->RestockBatchSize > 0 ? config->RestockBatchSize : 1;
+
+        return std::min(target - current, batch);
+    };
+
+    // Queue every stack an item is short of, keeping the copies adjacent so a
+    // sold out item is restocked as a batch instead of one stack per cycle.
+    auto appendMissingStacks = [&](const std::vector<uint32>& items)
+    {
+        for (auto const& itemID : items)
+        {
+            allItemIDs.insert(allItemIDs.end(), missingStacks(itemID), itemID);
+        }
+    };
+
+    // 1. Items with price overrides below their target count (randomized order),
+    //    sold out ones first, then the ones still partially stocked
     std::vector<uint32> itemsWithOverridesNotListed;
+    std::vector<uint32> itemsWithOverridesBelowTarget;
+
     for (const auto& [itemID, _] : config->itemPriceOverrides)
     {
+        if (missingStacks(itemID) == 0)
+        {
+            continue;
+        }
+
         if (itemsInAH.find(itemID) == itemsInAH.end())
         {
             itemsWithOverridesNotListed.push_back(itemID);
         }
+        else
+        {
+            itemsWithOverridesBelowTarget.push_back(itemID);
+        }
     }
+
     std::shuffle(itemsWithOverridesNotListed.begin(), itemsWithOverridesNotListed.end(), std::mt19937(std::random_device()()));
-    allItemIDs.insert(allItemIDs.end(), itemsWithOverridesNotListed.begin(), itemsWithOverridesNotListed.end());
+    std::shuffle(itemsWithOverridesBelowTarget.begin(), itemsWithOverridesBelowTarget.end(), std::mt19937(std::random_device()()));
+
+    appendMissingStacks(itemsWithOverridesNotListed);
+    appendMissingStacks(itemsWithOverridesBelowTarget);
 
     // 2. Items for which price overrides do exist (randomized order)
     std::vector<uint32> itemsWithOverrides;
@@ -1339,6 +1396,7 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
     // Log the number of items to sell
     if(config->TraceSeller)
     {
+        LOG_INFO("module", "AHBot [{}]: restocking {} sold out and {} understocked price override items", _id, itemsWithOverridesNotListed.size(), itemsWithOverridesBelowTarget.size());
         LOG_INFO("module", "AHBot [{}]: GetItemsToSell returning {} items", _id, allItemIDs.size());
     }
 

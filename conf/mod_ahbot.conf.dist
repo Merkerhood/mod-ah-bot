@@ -85,6 +85,15 @@
 #        If set to zero then no limits are set in place.
 #    Default 0
 #
+#    AuctionHouseBot.RestockBatchSize
+#        The maximum amount of stacks of the same item the seller queues in a single
+#        cycle while restocking it up to its target count. The target count is taken
+#        from the "mod_auctionhousebot_countOverride" table, or from
+#        AuctionHouseBot.DuplicatesCount when the item has no row there.
+#        Without this, a sold out item comes back one stack per cycle only.
+#        Set to 1 to restore that behaviour.
+#    Default 5
+#
 #    AuctionHouseBot.DivisibleStacks
 #        Sell items in stack sizes which depends on the maximum amount per stack.
 #        For example, an item with max stack size 20 will be sold in 5, 10 15 and 20 stacks, and not at random.
@@ -121,6 +130,7 @@ AuctionHouseBot.ItemsPerCycle = 200
 
 AuctionHouseBot.ConsiderOnlyBotAuctions = 0
 AuctionHouseBot.DuplicatesCount = 0
+AuctionHouseBot.RestockBatchSize = 5
 AuctionHouseBot.DivisibleStacks = 0
 AuctionHouseBot.ElapsingTimeClass = 1
 AuctionHouseBot.MinItems = 10000
