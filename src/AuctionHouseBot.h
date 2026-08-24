@@ -102,7 +102,7 @@ public:
 
     ObjectGuid::LowType GetAHBplayerGUID() { return _id; };
 
-    std::vector<uint32> GetItemsToSell(AHBConfig* config, ObjectGuid botGuid, const std::unordered_set<uint32>& itemsInAH);
+    std::vector<uint32> GetItemsToSell(AHBConfig* config, ObjectGuid botGuid, const std::unordered_set<uint32>& itemsInAH, const std::unordered_map<uint32, uint32>& botItemCounts);
     bool IsItemListedByBot(uint32 itemID, uint32 ahID, ObjectGuid botGuid);
     bool IsItemInAuctionHouse(uint32 itemID, uint32 ahID);
     std::vector<uint32> GetAllItemIDs(uint32 ahID);
