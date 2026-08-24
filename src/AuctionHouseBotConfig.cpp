@@ -101,7 +101,6 @@ AHBConfig::AHBConfig(uint32 ahid, AHBConfig* conf)
     // Copy the private values
     //
 
-    minItems                       = conf->minItems;
     maxItems                       = conf->maxItems;
     percentGreyTradeGoods          = conf->percentGreyTradeGoods;
     percentWhiteTradeGoods         = conf->percentWhiteTradeGoods;
@@ -392,7 +391,6 @@ void AHBConfig::Reset()
     AHID                           = 0;
     AHFID                          = 0;
 
-    minItems                       = 0;
     maxItems                       = 0;
 
     percentGreyTradeGoods          = 0;
@@ -618,27 +616,6 @@ uint32 AHBConfig::GetAHFID()
 uint32 AHBConfig::GetMaxStackSize()
 {
     return maxStackSize;
-}
-
-void AHBConfig::SetMinItems(uint32 value)
-{
-    minItems = value;
-}
-
-uint32 AHBConfig::GetMinItems()
-{
-    if ((minItems == 0) && (maxItems))
-    {
-        return maxItems;
-    }
-    else if ((maxItems) && (minItems > maxItems))
-    {
-        return maxItems;
-    }
-    else
-    {
-        return minItems;
-    }
 }
 
 void AHBConfig::SetMaxItems(uint32 value)
@@ -2073,7 +2050,6 @@ void AHBConfig::InitializeFromFile()
     ElapsingTimeClass              = sConfigMgr->GetOption<uint32>("AuctionHouseBot.ElapsingTimeClass"      , 1);
     ConsiderOnlyBotAuctions        = sConfigMgr->GetOption<bool>  ("AuctionHouseBot.ConsiderOnlyBotAuctions", false);
     ItemsPerCycle                  = sConfigMgr->GetOption<uint32>("AuctionHouseBot.ItemsPerCycle"          , 200);
-    minItems                       = sConfigMgr->GetOption<uint32>("AuctionHouseBot.MinItems"          , 1000);
     maxItems                       = sConfigMgr->GetOption<uint32>("AuctionHouseBot.MaxItems"          , 5000);
     maxStackSize                   = sConfigMgr->GetOption<uint32>("AuctionHouseBot.MaxStackSize", 20);
 
@@ -2211,10 +2187,6 @@ void AHBConfig::InitializeFromFile()
 
 void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
 {
-    // Load min and max items
-    //SetMinItems(WorldDatabase.Query("SELECT minitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-    //SetMaxItems(WorldDatabase.Query("SELECT maxitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
-
     // Load percentages, min/max prices, min/max bid prices, and max stacks in a single query
     QueryResult databaseValuesResult = WorldDatabase.Query(
         "SELECT "
@@ -2306,7 +2278,6 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
         {
             LOG_INFO("module", "Settings for Auctionhouse {}", GetAHID());
 
-            //LOG_INFO("module", "minItems                = {}", GetMinItems());
             //LOG_INFO("module", "maxItems                = {}", GetMaxItems());
 
             LOG_INFO("module", "percentGreyTradeGoods   = {}", greytg);

@@ -210,8 +210,7 @@ public:
             handler->PSendSysMessage("seller - enable/disabler seller");
             handler->PSendSysMessage("usemarketprice - enable/disabler selling at market price");
             handler->PSendSysMessage("ahexpire - remove all bot auctions");
-            handler->PSendSysMessage("minitems - set min auctions");
-            handler->PSendSysMessage("maxitems - set max auctions");
+            handler->PSendSysMessage("maxitems - set max auctions (until restart)");
             handler->PSendSysMessage("percentages - set selling percentages");
             handler->PSendSysMessage("minprice - set min price");
             handler->PSendSysMessage("maxprice - set max price");
@@ -235,21 +234,6 @@ public:
             for (AuctionHouseBot* bot: gBots)
             {
                 bot->Commands(AHBotCommand::ahexpire, ahMapID, 0, NULL);
-            }
-        }
-        else if (strncmp(opt, "minitems", l) == 0)
-        {
-            char* param1 = strtok(NULL, " ");
-
-            if (!ahMapIdStr || !param1)
-            {
-                handler->PSendSysMessage("Syntax is: ahbotoptions minitems $ahMapID (2, 6 or 7) $minItems");
-                return false;
-            }
-
-            for (AuctionHouseBot* bot : gBots)
-            {
-                bot->Commands(AHBotCommand::minitems, ahMapID, 0, param1);
             }
         }
         else if (strncmp(opt, "maxitems", l) == 0)

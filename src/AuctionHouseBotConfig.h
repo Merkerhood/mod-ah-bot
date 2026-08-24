@@ -34,7 +34,6 @@ private:
     uint32 AHID;                     // Id
     uint32 AHFID;                    // Faction id
 
-    uint32 minItems;
     uint32 maxItems;
     uint32 maxStackSize;
 
@@ -349,9 +348,6 @@ public:
 
     uint32 GetAHID();
     uint32 GetAHFID();
-
-    uint32 GetMinItems();
-    void SetMinItems(uint32 value);
 
     uint32 GetMaxItems();
     void SetMaxItems(uint32 value);
