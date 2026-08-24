@@ -1334,6 +1334,15 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
 
     for (const auto& [itemID, _] : config->itemPriceOverrides)
     {
+        // A price override row is a price, not a permission to sell: the item still
+        // has to have passed the filters in InitializeBins(). Without this, anything
+        // with an override slipped past the bind, class, level, disabled item and
+        // whitelist filters - which is how BoP gear reached the auction house.
+        if (!config->IsSellableItem(itemID))
+        {
+            continue;
+        }
+
         if (missingStacks(itemID) == 0)
         {
             continue;
@@ -1359,6 +1368,11 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
     std::vector<uint32> itemsWithOverrides;
     for (const auto& [itemID, _] : config->itemPriceOverrides)
     {
+        if (!config->IsSellableItem(itemID))
+        {
+            continue;
+        }
+
         itemsWithOverrides.push_back(itemID);
     }
     std::shuffle(itemsWithOverrides.begin(), itemsWithOverrides.end(), std::mt19937(std::random_device()()));

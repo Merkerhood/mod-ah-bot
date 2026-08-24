@@ -377,6 +377,12 @@ AHBConfig::AHBConfig(uint32 ahid, AHBConfig* conf)
     {
         YellowItemsBin.insert(id);
     }
+
+    SellableItems.clear();
+    for (uint32 id: conf->SellableItems)
+    {
+        SellableItems.insert(id);
+    }
 }
 
 AHBConfig::~AHBConfig()
@@ -599,6 +605,8 @@ void AHBConfig::Reset()
     PurpleItemsBin.clear();
     OrangeItemsBin.clear();
     YellowItemsBin.clear();
+
+    SellableItems.clear();
 
     itemsCount.clear();
     itemsSum.clear();
@@ -3362,6 +3370,8 @@ void AHBConfig::InitializeBins()
         // Now that the items passed all the tests, organize it by quality
         //
 
+        SellableItems.insert(itr->second.ItemId);
+
         if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
         {
             switch (itr->second.Quality)
@@ -3621,6 +3631,11 @@ void AHBConfig::LoadCountOverrides()
     } while (result->NextRow());
 
     LOG_INFO("module", "AHBConfig: Loaded {} count overrides from mod_auctionhousebot_countOverride", itemCountOverrides.size());
+}
+
+bool AHBConfig::IsSellableItem(uint32 itemId) const
+{
+    return SellableItems.find(itemId) != SellableItems.end();
 }
 
 uint32 AHBConfig::GetCountOverrideForItem(uint32 itemId) const
