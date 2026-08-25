@@ -285,6 +285,10 @@ public:
     std::set<uint32> OrangeItemsBin;
     std::set<uint32> YellowItemsBin;
 
+    // Every item that passed the filters in InitializeBins(), i.e. the union of
+    // all the bins above. Lets the price override path reuse the filter verdict.
+    std::set<uint32> SellableItems;
+
     // Vectors for items
     std::vector<uint32> GreyItemsVec;
     std::vector<uint32> WhiteItemsVec;
@@ -398,6 +402,7 @@ public:
     uint64 GetItemPrice(uint32 id);
 
     void LoadPriceOverrides();
+    bool IsSellableItem(uint32 itemId) const;
     void LoadCountOverrides();
 
     void LoadBotGUIDs();
