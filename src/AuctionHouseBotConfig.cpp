@@ -2668,6 +2668,47 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
 void AHBConfig::InitializeBins()
 {
     //
+    // Start from empty containers. Initialize() runs this again on every
+    // ".reload config" without going through Reset(), so without this the bins
+    // keep items that the reloaded configuration or blacklist just excluded,
+    // and the vectors grow by a full copy of themselves on each reload.
+    //
+
+    GreyTradeGoodsBin.clear();
+    WhiteTradeGoodsBin.clear();
+    GreenTradeGoodsBin.clear();
+    BlueTradeGoodsBin.clear();
+    PurpleTradeGoodsBin.clear();
+    OrangeTradeGoodsBin.clear();
+    YellowTradeGoodsBin.clear();
+
+    GreyItemsBin.clear();
+    WhiteItemsBin.clear();
+    GreenItemsBin.clear();
+    BlueItemsBin.clear();
+    PurpleItemsBin.clear();
+    OrangeItemsBin.clear();
+    YellowItemsBin.clear();
+
+    GreyTradeGoodsVec.clear();
+    WhiteTradeGoodsVec.clear();
+    GreenTradeGoodsVec.clear();
+    BlueTradeGoodsVec.clear();
+    PurpleTradeGoodsVec.clear();
+    OrangeTradeGoodsVec.clear();
+    YellowTradeGoodsVec.clear();
+
+    GreyItemsVec.clear();
+    WhiteItemsVec.clear();
+    GreenItemsVec.clear();
+    BlueItemsVec.clear();
+    PurpleItemsVec.clear();
+    OrangeItemsVec.clear();
+    YellowItemsVec.clear();
+
+    SellableItems.clear();
+
+    //
     // Exclude items depending on the configuration; whatever passes all the tests is put in the lists.
     //
 
