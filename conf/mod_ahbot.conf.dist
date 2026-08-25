@@ -94,6 +94,16 @@
 #        Set to 1 to restore that behaviour.
 #    Default 5
 #
+#    AuctionHouseBot.BinItemShare
+#        Percentage of each cycle's candidate list reserved for items that have no
+#        row in "mod_auctionhousebot_priceOverride". The seller only ever works
+#        through the first AuctionHouseBot.ItemsPerCycle entries of that list, and
+#        the price override items alone number in the thousands, so without a
+#        reserved share those items are never reached and never listed.
+#        Set to 0 to append them after the price override items instead (they will
+#        then effectively never be listed).
+#    Default 25
+#
 #    AuctionHouseBot.DivisibleStacks
 #        Sell items in stack sizes which depends on the maximum amount per stack.
 #        For example, an item with max stack size 20 will be sold in 5, 10 15 and 20 stacks, and not at random.
@@ -131,6 +141,7 @@ AuctionHouseBot.ItemsPerCycle = 200
 AuctionHouseBot.ConsiderOnlyBotAuctions = 0
 AuctionHouseBot.DuplicatesCount = 0
 AuctionHouseBot.RestockBatchSize = 5
+AuctionHouseBot.BinItemShare = 25
 AuctionHouseBot.DivisibleStacks = 0
 AuctionHouseBot.ElapsingTimeClass = 1
 AuctionHouseBot.MaxItems = 15000
