@@ -36,7 +36,10 @@ WHERE (
     NAME LIKE '%big sack%' OR
     NAME LIKE '%decoded%' OR
     NAME LIKE '%knowledge:%' OR
-    NAME LIKE '%manual%' OR
+    -- '%manual%' also swallows the Shredder Operating Manual pages, which are
+    -- tradeable world drops and belong on the auction house. The combined
+    -- chapters stay excluded: they are bound and cannot be traded.
+    (NAME LIKE '%manual%' AND NAME NOT LIKE 'Shredder Operating Manual - Page%') OR
     NAME LIKE '%gnome head%' OR
     NAME LIKE '%critter enlarger%' OR
     NAME LIKE '%box of%' OR
