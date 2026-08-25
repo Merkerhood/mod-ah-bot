@@ -203,6 +203,7 @@ public:
 
     uint32 DuplicatesCount;
     uint32 RestockBatchSize;
+    uint32 BinItemShare;
     uint32 ElapsingTimeClass;
 
     bool DivisibleStacks;

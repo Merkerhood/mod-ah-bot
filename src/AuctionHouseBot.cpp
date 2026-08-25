@@ -1319,11 +1319,18 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
 
     // Queue every stack an item is short of, keeping the copies adjacent so a
     // sold out item is restocked as a batch instead of one stack per cycle.
+    // Blocks 1 and 2 (price override items) and blocks 3 and 4 (bin items) are
+    // collected separately so they can be woven together at the end. Concatenating
+    // them starved the bin items: a cycle only ever consumes the first
+    // ItemsPerCycle entries, and the override blocks alone are thousands long.
+    std::vector<uint32> priorityItems;
+    std::vector<uint32> binOnlyItems;
+
     auto appendMissingStacks = [&](const std::vector<uint32>& items)
     {
         for (auto const& itemID : items)
         {
-            allItemIDs.insert(allItemIDs.end(), missingStacks(itemID), itemID);
+            priorityItems.insert(priorityItems.end(), missingStacks(itemID), itemID);
         }
     };
 
@@ -1376,7 +1383,7 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
         itemsWithOverrides.push_back(itemID);
     }
     std::shuffle(itemsWithOverrides.begin(), itemsWithOverrides.end(), std::mt19937(std::random_device()()));
-    allItemIDs.insert(allItemIDs.end(), itemsWithOverrides.begin(), itemsWithOverrides.end());
+    priorityItems.insert(priorityItems.end(), itemsWithOverrides.begin(), itemsWithOverrides.end());
 
     // 3. Items without overrides that are not in the auction house (randomized order)
     addItems(greyItemsBin, true);
@@ -1389,7 +1396,7 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
 
     // Randomize the collected items
     std::shuffle(tempItemIDs.begin(), tempItemIDs.end(), std::mt19937(std::random_device()()));
-    allItemIDs.insert(allItemIDs.end(), tempItemIDs.begin(), tempItemIDs.end());
+    binOnlyItems.insert(binOnlyItems.end(), tempItemIDs.begin(), tempItemIDs.end());
 
     // 4. Random items without price overrides (randomized order)
     tempItemIDs.clear();
@@ -1407,9 +1414,40 @@ std::vector<uint32> AuctionHouseBot::GetItemsToSell(AHBConfig* config, ObjectGui
     allItemIDs.insert(allItemIDs.end(), tempItemIDs.begin(), tempItemIDs.end());
     */
 
+    // Weave the two sources together so that, over any stretch of the list,
+    // BinItemShare percent of the slots belong to items that have no price
+    // override. At 0 the bin items simply follow the priority ones, which is the
+    // old concatenation order.
+    uint32 share = std::min<uint32>(config->BinItemShare, 100);
+    size_t nextPriority = 0;
+    size_t nextBin = 0;
+    uint32 credit = 0;
+
+    allItemIDs.reserve(priorityItems.size() + binOnlyItems.size());
+
+    while (nextPriority < priorityItems.size() || nextBin < binOnlyItems.size())
+    {
+        credit += share;
+
+        if (credit >= 100 && nextBin < binOnlyItems.size())
+        {
+            credit -= 100;
+            allItemIDs.push_back(binOnlyItems[nextBin++]);
+        }
+        else if (nextPriority < priorityItems.size())
+        {
+            allItemIDs.push_back(priorityItems[nextPriority++]);
+        }
+        else if (nextBin < binOnlyItems.size())
+        {
+            allItemIDs.push_back(binOnlyItems[nextBin++]);
+        }
+    }
+
     // Log the number of items to sell
     if(config->TraceSeller)
     {
+        LOG_INFO("module", "AHBot [{}]: {} price override and {} bin only candidates woven at {}%", _id, priorityItems.size(), binOnlyItems.size(), share);
         LOG_INFO("module", "AHBot [{}]: restocking {} sold out and {} understocked price override items", _id, itemsWithOverridesNotListed.size(), itemsWithOverridesBelowTarget.size());
         LOG_INFO("module", "AHBot [{}]: GetItemsToSell returning {} items", _id, allItemIDs.size());
     }

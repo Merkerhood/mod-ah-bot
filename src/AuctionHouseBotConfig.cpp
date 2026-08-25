@@ -222,6 +222,7 @@ AHBConfig::AHBConfig(uint32 ahid, AHBConfig* conf)
     Bind_Quest_Item                = conf->Bind_Quest_Item;
     DuplicatesCount                = conf->DuplicatesCount;
     RestockBatchSize               = conf->RestockBatchSize;
+    BinItemShare                   = conf->BinItemShare;
     ElapsingTimeClass              = conf->ElapsingTimeClass;
     DivisibleStacks                = conf->DivisibleStacks;
     DisablePermEnchant             = conf->DisablePermEnchant;
@@ -538,6 +539,7 @@ void AHBConfig::Reset()
     Bind_Quest_Item                = false;
     DuplicatesCount                = 0;
     RestockBatchSize               = 5;
+    BinItemShare                   = 25;
     ElapsingTimeClass              = 1;
     DivisibleStacks                = false;
 
@@ -2057,6 +2059,7 @@ void AHBConfig::InitializeFromFile()
     MarketResetThreshold           = sConfigMgr->GetOption<uint32>("AuctionHouseBot.MarketResetThreshold"   , 25);
     DuplicatesCount                = sConfigMgr->GetOption<uint32>("AuctionHouseBot.DuplicatesCount"        , 0);
     RestockBatchSize               = sConfigMgr->GetOption<uint32>("AuctionHouseBot.RestockBatchSize"       , 5);
+    BinItemShare                   = sConfigMgr->GetOption<uint32>("AuctionHouseBot.BinItemShare"           , 25);
     DivisibleStacks                = sConfigMgr->GetOption<bool>  ("AuctionHouseBot.DivisibleStacks"        , false);
     ElapsingTimeClass              = sConfigMgr->GetOption<uint32>("AuctionHouseBot.ElapsingTimeClass"      , 1);
     ConsiderOnlyBotAuctions        = sConfigMgr->GetOption<bool>  ("AuctionHouseBot.ConsiderOnlyBotAuctions", false);
