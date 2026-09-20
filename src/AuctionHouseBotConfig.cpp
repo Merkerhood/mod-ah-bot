@@ -2762,8 +2762,10 @@ void AHBConfig::InitializeBins()
         // and the buyer know what they are worth.
         //
 
-        auto [overrideAvgPrice, overrideMinPrice] = GetPriceOverrideForItem(itr->second.ItemId);
-        bool hasPriceOverride = (overrideAvgPrice > 0) || (overrideMinPrice > 0);
+        // avgPrice specifically: it is what the seller uses as the buyout
+        // baseline, and a row carrying only a minPrice would list at 0.
+
+        bool hasPriceOverride = std::get<0>(GetPriceOverrideForItem(itr->second.ItemId)) > 0;
 
         if (!hasPriceOverride)
         {
