@@ -85,6 +85,9 @@ private:
     // Function to fetch recent auction history and calculate moving average prices
     std::pair<uint64, uint64> CalculateMovingAveragePrices(uint32 itemId, AHBConfig* config);
 
+    // Per item price the seller would currently ask, 0 without trading history
+    uint64 GetMarketReferencePrice(uint32 itemId, AHBConfig* config);
+
     // Function to adjust prices based on moving average prices
     void AdjustPrices(uint32 itemId, uint64& buyoutPrice, uint64& bidPrice, AHBConfig* config);
 

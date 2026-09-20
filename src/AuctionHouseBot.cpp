@@ -416,6 +416,19 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
             maxPrice = avgPrice * 115 / 100;
         }
 
+        // The static override is only the floor of what the bot is willing to
+        // pay. The seller prices off the moving average and the demand
+        // multiplier, and both of those climb above the override, so a cap tied
+        // to the override alone leaves the bot refusing the very prices it asks
+        // for itself. Follow the same market reference here, with the same
+        // headroom on top.
+        uint64 marketPrice = GetMarketReferencePrice(prototype->ItemId, config);
+
+        if (marketPrice > 0 && maxPrice < marketPrice * 115 / 100)
+        {
+            maxPrice = marketPrice * 115 / 100;
+        }
+
         uint64 SellPriceValue = maxPrice > 0 ? maxPrice : prototype->SellPrice;
         uint64 BuyPriceValue = avgPrice > 0 ? avgPrice : prototype->BuyPrice;
 
@@ -2031,18 +2044,24 @@ std::pair<uint64, uint64> AuctionHouseBot::CalculateMovingAveragePrices(uint32 i
 
     QueryResult result;
 
+    // final_price is what the whole stack went for, so the row has to be divided
+    // by its quantity: everything downstream, the price overrides and the
+    // seller's baseline alike, works per item. Without it a twelve stack of
+    // leather reads as a price per leather and the baseline runs into the
+    // avgPrice * 2 clamp on every item that sells in stacks.
+
     if (config->UseAuctionCount)
     {
         // Fetch the last N auctions
         result = WorldDatabase.Query(
-            "SELECT final_price, auction_type FROM mod_auctionhousebot_auction_history "
+            "SELECT final_price, quantity, auction_type FROM mod_auctionhousebot_auction_history "
             "WHERE item_id = {} ORDER BY timestamp DESC LIMIT {}", itemId, config->AuctionCount);
     }
     else
     {
         // Fetch auctions from the last N days
         result = WorldDatabase.Query(
-            "SELECT final_price, auction_type FROM mod_auctionhousebot_auction_history "
+            "SELECT final_price, quantity, auction_type FROM mod_auctionhousebot_auction_history "
             "WHERE item_id = {} AND timestamp >= NOW() - INTERVAL {} DAY", itemId, config->Days);
     }
 
@@ -2051,8 +2070,11 @@ std::pair<uint64, uint64> AuctionHouseBot::CalculateMovingAveragePrices(uint32 i
         do
         {
             Field* fields = result->Fetch();
-            uint64 finalPrice = fields[0].Get<uint64>();
-            std::string auctionType = fields[1].Get<std::string>();
+            uint64 stackPrice = fields[0].Get<uint64>();
+            uint32 quantity = fields[1].Get<uint32>();
+            std::string auctionType = fields[2].Get<std::string>();
+
+            uint64 finalPrice = (quantity > 0) ? (stackPrice / quantity) : stackPrice;
 
             if (auctionType == "buyout")
             {
@@ -2134,6 +2156,31 @@ std::pair<uint64, uint64> AuctionHouseBot::CalculateMovingAveragePrices(uint32 i
     }
 
     return {averageBuyoutPrice, averageBidPrice};
+}
+
+// =============================================================================
+// The per item price the seller would ask for this item right now, or 0 when
+// there is no trading history to go by. Same inputs as AdjustPrices(), so the
+// buyer and the seller read the same market.
+// =============================================================================
+
+uint64 AuctionHouseBot::GetMarketReferencePrice(uint32 itemId, AHBConfig* config)
+{
+    auto [averageBuyoutPrice, averageBidPrice] = CalculateMovingAveragePrices(itemId, config);
+
+    uint64 reference = std::max(averageBuyoutPrice, averageBidPrice);
+
+    if (reference == 0)
+    {
+        return 0;
+    }
+
+    if (config->DynamicPricingEnable)
+    {
+        reference = uint64(reference * config->GetEffectiveDemandMultiplier(itemId));
+    }
+
+    return reference;
 }
 
 // Function to adjust prices based on moving average prices

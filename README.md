@@ -90,6 +90,15 @@ players are actually paying instead of a static value. Sales are recorded in
   computed price is adopted; below it the price is nudged by a heuristic, which smooths
   oscillations. Old history is pruned automatically.
 
+History rows record what the whole stack went for, so each row is divided by its quantity
+before it enters the average. Everything else in the module, the overrides included, works per
+item.
+
+The buyer reads the same market reference. Its ceiling is the higher of the price override
+(`avgPrice + (avgPrice - minPrice)`, at least `avgPrice * 1.15`) and the demand-adjusted
+moving average plus the same 15 percent, so the bot never refuses a price it would ask for
+itself.
+
 ### ChromieCraft base prices
 
 `mod_auctionhousebot_priceOverride` (`item`, `avgPrice`, `minPrice`) is the base "plain"
