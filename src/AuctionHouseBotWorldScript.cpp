@@ -123,12 +123,14 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool reload)
         // Clear the bots array; this way they wont be used anymore during the initialization stage.
         DeleteBots();
 
+        // The shared maps come first: InitializeBins() reads the price
+        // overrides to decide whether an item has a price at all.
+        LoadSharedOverrides();
+
         // Reload the configuration for the auction houses
         gAllianceConfig->Initialize(gBotsId);
         gHordeConfig->Initialize(gBotsId);
         gNeutralConfig->Initialize(gBotsId);
-
-        LoadSharedOverrides();
 
         // Start again the bots
         PopulateBots();
@@ -143,11 +145,13 @@ void AHBot_WorldScript::OnStartup()
     // Initialize the configuration (done only once at startup)
     //
 
+    // The shared maps come first: InitializeBins() reads the price overrides
+    // to decide whether an item has a price at all.
+    LoadSharedOverrides();
+
     gAllianceConfig->Initialize(gBotsId);
     gHordeConfig->Initialize   (gBotsId);
     gNeutralConfig->Initialize (gBotsId);
-
-    LoadSharedOverrides();
 
     //
     // Starts the bots
@@ -191,10 +195,13 @@ void AHBot_WorldScript::LoadSharedOverrides()
     // Load once using the neutral config, then share across all configurations.
     // Called on startup and on every config reload, so .reload config keeps
     // mod_auctionhousebot_priceOverride, mod_auctionhousebot_countOverride and
-    // mod_auctionhousebot_demand current.
+    // mod_auctionhousebot_demand current. The vendor gold prices come from the
+    // same place for the same reason: npc_vendor changes take effect on
+    // .reload config, and the query runs once instead of once per faction.
     gNeutralConfig->LoadPriceOverrides();
     gNeutralConfig->LoadCountOverrides();
     gNeutralConfig->LoadDemandOverrides();
+    gNeutralConfig->LoadVendorGoldPrices();
 
     // Account verdicts depend on the BotAccountPrefixes option; drop them so a
     // changed prefix list takes effect on reload. Regrows bounded by the
@@ -209,6 +216,9 @@ void AHBot_WorldScript::LoadSharedOverrides()
 
     gAllianceConfig->itemDemand = gNeutralConfig->itemDemand;
     gHordeConfig->itemDemand    = gNeutralConfig->itemDemand;
+
+    gAllianceConfig->VendorGoldPrices = gNeutralConfig->VendorGoldPrices;
+    gHordeConfig->VendorGoldPrices    = gNeutralConfig->VendorGoldPrices;
 }
 
 void AHBot_WorldScript::PopulateBots()
