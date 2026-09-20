@@ -37,6 +37,7 @@
 #include <random>
 #include <sstream>
 #include <map>
+#include <unordered_map>
 #include <numeric>
 #include <utility>
 #include <chrono>
@@ -346,6 +347,9 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
     uint32 evaluated = 0;
     uint32 const maxEvaluations = bidsPerInterval * 100;
 
+    // Market reference prices for the items seen in this pass, see below.
+    std::unordered_map<uint32, uint64> marketPriceCache;
+
     for (uint32 auctionID : auctionsGuidsToConsider)
     {
         if (opsDone >= bidsPerInterval || evaluated >= maxEvaluations)
@@ -422,11 +426,30 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         // to the override alone leaves the bot refusing the very prices it asks
         // for itself. Follow the same market reference here, with the same
         // headroom on top.
-        uint64 marketPrice = GetMarketReferencePrice(prototype->ItemId, config);
+        //
+        // The market reference costs two world database queries, so it is only
+        // read for auctions the override cap would turn away, and the answer is
+        // kept for the rest of this pass: a pass walks up to a hundred auctions
+        // per bid it places, and most of them are the same few items.
 
-        if (marketPrice > 0 && maxPrice < marketPrice * 115 / 100)
+        uint64 itemCount = pItem->GetCount() > 0 ? pItem->GetCount() : 1;
+        uint64 perItemPrice = currentPrice / itemCount;
+
+        if (maxPrice == 0 || perItemPrice >= maxPrice)
         {
-            maxPrice = marketPrice * 115 / 100;
+            auto cached = marketPriceCache.find(prototype->ItemId);
+
+            if (cached == marketPriceCache.end())
+            {
+                cached = marketPriceCache.emplace(prototype->ItemId, GetMarketReferencePrice(prototype->ItemId, config)).first;
+            }
+
+            uint64 marketPrice = cached->second;
+
+            if (marketPrice > 0 && maxPrice < marketPrice * 115 / 100)
+            {
+                maxPrice = marketPrice * 115 / 100;
+            }
         }
 
         uint64 SellPriceValue = maxPrice > 0 ? maxPrice : prototype->SellPrice;
