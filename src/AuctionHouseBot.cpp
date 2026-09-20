@@ -1107,6 +1107,31 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         }
 
+        // Never ask more than the vendor does.
+        //
+        // The price overrides are scraped market data and know nothing about
+        // vendors, so an item a vendor sells for a copper can carry a multi gold
+        // override. Since the acquisition source filters treat an item as
+        // sellable when any enabled source matches, those items reach the
+        // auction house as loot and would be listed at the scraped price. Cap
+        // the per item buyout at the vendor price so the listing stays credible.
+        uint64 vendorPrice = config->GetVendorPriceForItem(itemID);
+
+        if (vendorPrice > 0 && buyoutPrice > vendorPrice)
+        {
+            if (config->DebugOutSeller)
+            {
+                LOG_INFO("module", "AHBot [{}]: item {} buyout {} capped to vendor price {}", _id, itemID, buyoutPrice, vendorPrice);
+            }
+
+            buyoutPrice = vendorPrice;
+
+            if (bidPrice > buyoutPrice)
+            {
+                bidPrice = buyoutPrice;
+            }
+        }
+
         // Determine the stack size
         if (config->GetMaxStack(prototype->Quality) > 1 && item->GetMaxStackCount() > 1)
         {

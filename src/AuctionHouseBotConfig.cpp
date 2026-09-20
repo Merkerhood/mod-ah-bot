@@ -278,6 +278,12 @@ AHBConfig::AHBConfig(uint32 ahid, AHBConfig* conf)
         LootItems.insert(id);
     }
 
+    VendorGoldPrices.clear();
+    for (auto const& entry: conf->VendorGoldPrices)
+    {
+        VendorGoldPrices.insert(entry);
+    }
+
     DisableItemStore.clear();
     for (uint32 id: conf->DisableItemStore)
     {
@@ -588,6 +594,7 @@ void AHBConfig::Reset()
 
     NpcItems.clear();
     LootItems.clear();
+    VendorGoldPrices.clear();
 
     DisableItemStore.clear();
     SellerWhiteList.clear();
@@ -2601,6 +2608,52 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     }
 
     //
+    // Reload the vendor gold prices.
+    //
+    // Only rows a player can buy for gold, in unlimited quantity, say anything
+    // about what the item is worth: an ExtendedCost row is paid in honor or
+    // tokens, and a limited stock (maxcount) makes the item scarce enough that
+    // an auction house premium is legitimate. The rest have a hard ceiling -
+    // nobody bids on what the vendor next door sells cheaper.
+    //
+
+    VendorGoldPrices.clear();
+
+    // BuyPrice is the cost of a whole BuyCount bundle, not of a single item:
+    // the core charges BuyPrice * count and hands over BuyCount * count items.
+    // The bot prices per item, so divide. Integer division keeps the result an
+    // integer for the field reader, and the floor never drops to zero, which
+    // the getter would read as "no vendor sells this".
+
+    QueryResult vendorPriceResults = WorldDatabase.Query(
+        "SELECT nv.item, MIN(GREATEST(1, it.BuyPrice DIV it.BuyCount)) FROM npc_vendor nv "
+        "JOIN item_template it ON it.entry = nv.item "
+        "WHERE nv.ExtendedCost = 0 AND nv.maxcount = 0 AND it.BuyPrice > 0 AND it.BuyCount > 0 "
+        "GROUP BY nv.item");
+
+    if (vendorPriceResults)
+    {
+        do
+        {
+            Field* fields = vendorPriceResults->Fetch();
+            VendorGoldPrices[fields[0].Get<uint32>()] = fields[1].Get<uint64>();
+
+        } while (vendorPriceResults->NextRow());
+    }
+    else
+    {
+        if (DebugOutConfig)
+        {
+            LOG_ERROR("module", "AuctionHouseBot: failed to retrieve vendor gold prices");
+        }
+    }
+
+    if (DebugOutConfig)
+    {
+        LOG_INFO("module", "Loaded {} vendor gold prices", uint32(VendorGoldPrices.size()));
+    }
+
+    //
     // Reload the list from the lootable items
     //
 
@@ -2789,44 +2842,17 @@ void AHBConfig::InitializeBins()
 
         if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
         {
-            bool isNpc   = false;
-            bool isLoot  = false;
-            bool exclude = false;
+            bool isNpc  = NpcItems.find(itr->second.ItemId) != NpcItems.end();
+            bool isLoot = LootItems.find(itr->second.ItemId) != LootItems.end();
 
-            if (NpcItems.find(itr->second.ItemId) != NpcItems.end())
-            {
-                isNpc = true;
+            bool allowed =
+                (isNpc && Vendor_TGs) ||
+                (isLoot && Loot_TGs) ||
+                (!isNpc && !isLoot && Other_TGs);
 
-                if (!Vendor_TGs)
-                {
-                    exclude = true;
-                }
-            }
-
-            if (!exclude)
-            {
-                if (LootItems.find(itr->second.ItemId) != LootItems.end())
-                {
-                    isLoot = true;
-
-                    if (!Loot_TGs)
-                    {
-                        exclude = true;
-                    }
-                }
-            }
-
-            if (exclude)
+            if (!allowed)
             {
                 continue;
-            }
-
-            if (!Other_TGs)
-            {
-                if (!isNpc && !isLoot)
-                {
-                    continue;
-                }
             }
         }
 
@@ -2836,44 +2862,17 @@ void AHBConfig::InitializeBins()
 
         if (itr->second.Class != ITEM_CLASS_TRADE_GOODS)
         {
-            bool isNpc   = false;
-            bool isLoot  = false;
-            bool exclude = false;
+            bool isNpc  = NpcItems.find(itr->second.ItemId) != NpcItems.end();
+            bool isLoot = LootItems.find(itr->second.ItemId) != LootItems.end();
 
-            if (NpcItems.find(itr->second.ItemId) != NpcItems.end())
-            {
-                isNpc = true;
+            bool allowed =
+                (isNpc && Vendor_Items) ||
+                (isLoot && Loot_Items) ||
+                (!isNpc && !isLoot && Other_Items);
 
-                if (!Vendor_Items)
-                {
-                    exclude = true;
-                }
-            }
-
-            if (!exclude)
-            {
-                if (LootItems.find(itr->second.ItemId) != LootItems.end())
-                {
-                    isLoot = true;
-
-                    if (!Loot_Items)
-                    {
-                        exclude = true;
-                    }
-                }
-            }
-
-            if (exclude)
+            if (!allowed)
             {
                 continue;
-            }
-
-            if (!Other_Items)
-            {
-                if (!isNpc && !isLoot)
-                {
-                    continue;
-                }
             }
         }
 
@@ -3680,6 +3679,17 @@ void AHBConfig::LoadCountOverrides()
 bool AHBConfig::IsSellableItem(uint32 itemId) const
 {
     return SellableItems.find(itemId) != SellableItems.end();
+}
+
+uint64 AHBConfig::GetVendorPriceForItem(uint32 itemId) const
+{
+    auto it = VendorGoldPrices.find(itemId);
+    if (it != VendorGoldPrices.end())
+    {
+        return it->second;
+    }
+    // 0 means "no vendor sells this freely for gold" -> no ceiling applies
+    return 0;
 }
 
 uint32 AHBConfig::GetCountOverrideForItem(uint32 itemId) const

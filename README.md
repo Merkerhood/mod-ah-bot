@@ -155,6 +155,16 @@ faction auction house.
 `z_filter_disabled_and_trash.sql` builds an exclusion set (disabled, trash, and non-market
 items) so the bot never lists junk. `AuctionHouseBot.DEBUG_FILTERS` traces what gets filtered.
 
+### Vendor price ceiling
+
+The acquisition source filters accept an item when any enabled source matches, so an item a
+vendor sells is still listed when it also drops as loot. The ChromieCraft overrides know
+nothing about vendors, so some of those items carry a price far above what the vendor next
+door charges. The seller caps the per-item buyout at the vendor's gold price, taken from
+`npc_vendor` rows that cost gold only (`ExtendedCost = 0`) and have unlimited stock
+(`maxcount = 0`). Limited-stock and token-priced items keep their scraped price, since the
+scarcity there is real. `AuctionHouseBot.DEBUG_SELLER` logs each capped listing.
+
 ### Performance
 
 For large or busy realms the seller path was rewritten to avoid repeatedly scanning the
