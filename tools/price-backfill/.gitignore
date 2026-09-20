@@ -7,3 +7,5 @@ item-counts.csv
 __pycache__/
 *.pyc
 vendor.csv
+items.tsv
+disabled.txt
