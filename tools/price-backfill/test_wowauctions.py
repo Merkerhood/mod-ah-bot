@@ -48,6 +48,55 @@ class FetchItemTest(unittest.TestCase):
                 wowauctions.fetch_item("BUILD123", 4389)
 
 
+class PageFallbackTest(unittest.TestCase):
+    def setUp(self):
+        wowauctions._page_mode = False
+        self.addCleanup(setattr, wowauctions, "_page_mode", False)
+
+    @staticmethod
+    def _page(item):
+        payload = json.dumps({"props": {"pageProps": {"item": item}}})
+        return ('<html><script id="__NEXT_DATA__" type="application/json">'
+                + payload + "</script></html>")
+
+    def test_page_url_uses_id_only(self):
+        self.assertEqual(
+            wowauctions.page_url(4389),
+            "https://www.wowauctions.net/auctionHouse/chromie-craft/"
+            "chromiecraft/mergedAh/x-4389",
+        )
+
+    def test_data_404_falls_back_to_page(self):
+        err = urllib.error.HTTPError("u", 404, "nf", {}, io.BytesIO(b""))
+        page = self._page({"stats": {"avg_price": 7}})
+        with mock.patch.object(wowauctions, "_get", side_effect=[err, page]):
+            item = wowauctions.fetch_item("BUILD123", 4389)
+        self.assertEqual(item, {"stats": {"avg_price": 7}})
+
+    def test_page_mode_latches_after_a_successful_fallback(self):
+        err = urllib.error.HTTPError("u", 404, "nf", {}, io.BytesIO(b""))
+        page = self._page({"stats": {"avg_price": 7}})
+        with mock.patch.object(wowauctions, "_get", side_effect=[err, page]):
+            wowauctions.fetch_item("BUILD123", 4389)
+
+        # Second call goes straight to the page: one request, no data URL.
+        with mock.patch.object(wowauctions, "_get", return_value=page) as get:
+            wowauctions.fetch_item("BUILD123", 8170)
+        self.assertEqual(get.call_count, 1)
+        self.assertIn("/auctionHouse/", get.call_args[0][0])
+
+    def test_no_data_anywhere_returns_none_without_latching(self):
+        err = urllib.error.HTTPError("u", 404, "nf", {}, io.BytesIO(b""))
+        page = self._page(None)
+        with mock.patch.object(wowauctions, "_get", side_effect=[err, page]):
+            self.assertIsNone(wowauctions.fetch_item("BUILD123", 999999))
+        self.assertFalse(wowauctions._page_mode)
+
+    def test_page_without_next_data_returns_none(self):
+        with mock.patch.object(wowauctions, "_get", return_value="<html></html>"):
+            self.assertIsNone(wowauctions.fetch_item_from_page(4389))
+
+
 class RetryTest(unittest.TestCase):
     def test_retries_on_500_then_succeeds(self):
         err = urllib.error.HTTPError("u", 500, "err", {}, io.BytesIO(b""))
