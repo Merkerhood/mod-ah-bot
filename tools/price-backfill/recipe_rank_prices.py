@@ -21,7 +21,7 @@ IDX_LOG_PRODUCT = 2
 IDX_HAS_PRODUCT = 3
 IDX_LOG_SELL = 4
 IDX_HAS_SELL = 5
-_QUALITIES = (0, 1, 2, 3, 4)
+_QUALITIES = (0, 1, 2, 3, 4, 5)  # matches the Quality <= 5 export filter
 RANK_BUCKET = 25
 
 Model = namedtuple("Model", "coeffs skills")

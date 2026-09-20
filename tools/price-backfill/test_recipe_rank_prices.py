@@ -42,6 +42,14 @@ class FeatureTest(unittest.TestCase):
         tail = f[-len(skills):]
         self.assertEqual(tail, [0.0, 1.0, 0.0])
 
+    def test_every_quality_the_exporter_admits_gets_its_own_slot(self):
+        # the class-9 export filters Quality <= 5, so a legendary recipe must
+        # not land in the same all-zero slot as an unrecognised quality
+        seen = [rrp.features(sample(quality=q), [])[6:] for q in range(6)]
+        for f in seen:
+            self.assertEqual(sum(f), 1.0)
+        self.assertEqual(len({tuple(f) for f in seen}), 6)
+
     def test_unknown_profession_gets_no_one_hot(self):
         f = rrp.features(sample(skill=999), [165, 197])
         self.assertEqual(f[-2:], [0.0, 0.0])
