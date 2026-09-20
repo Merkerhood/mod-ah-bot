@@ -140,6 +140,19 @@ the items that have only a `BuyPrice`.
 Derived rows only ADD items with no existing override, so the merge is additive
 and leaves every scraped price untouched.
 
+**Re-running as real market data accumulates:** pass every earlier run's report
+back in, once per run, so the tool does not fit on its own output.
+
+```bash
+python3 fallback.py ... --prior-report reports/calibrated-fallback-2026-09-20.csv
+```
+
+Nothing in the override table distinguishes a derived row from a scraped one,
+and a derived row is proportional to `BuyPrice` by construction. Left in the
+fitting population it would reinforce the previous multiplier and make a sparse
+bucket look well populated. The committed reports are the record of which items
+were derived, which is why they are kept.
+
 ### How a price is chosen
 
 The multiplier comes from the item's own `(class, subclass, quality)` bucket,
@@ -150,7 +163,8 @@ records which one was used.
 Two guards sit on the result. The price is capped at the `--cap-percentile` of
 what the bucket has actually fetched, because a loose bucket applied to an
 unusually expensive item produces a number the market has never seen. It is then
-floored at `SellPrice`, since no seller lists below vendor buyback.
+floored at `SellPrice` -- both `avgPrice` and `minPrice` -- since no seller
+lists below vendor buyback.
 
 Recipes (class 9) are excluded by default: they need a pricing basis of their
 own rather than a class multiplier. Items with `BuyPrice = 0` have no anchor and

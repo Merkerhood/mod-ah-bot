@@ -58,6 +58,23 @@ class FitPopulationTest(unittest.TestCase):
         pop = fallback.select_fit(rows, {2, 4}, disabled=set())
         self.assertEqual([it.entry for it in pop], [2, 4])
 
+    def test_previously_derived_rows_stay_out_of_the_fit(self):
+        # A row this tool wrote on an earlier run is not a market observation.
+        # Re-running as real data accumulates must not fit on its own output.
+        rows = [item(i) for i in range(1, 6)]
+        pop = fallback.select_fit(rows, {1, 2, 3, 4, 5}, disabled=set(),
+                                  derived={3, 5})
+        self.assertEqual([it.entry for it in pop], [1, 2, 4])
+
+
+class PriorReportTest(unittest.TestCase):
+    def test_reads_derived_item_ids_from_a_prior_report(self):
+        import io
+        csv_text = ("item,tier,multiplier,avg,min,capped,floored\n"
+                    "101,class-quality,2.0,200,100,0,0\n"
+                    "102,no-anchor,0,0,0,0,0\n")
+        self.assertEqual(fallback.read_derived(io.StringIO(csv_text)), {101})
+
 
 if __name__ == "__main__":
     unittest.main()

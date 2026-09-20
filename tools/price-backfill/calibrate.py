@@ -55,7 +55,7 @@ class Calibration:
         """Return ((avg_multiplier, min_multiplier), tier) for an item."""
         for tier, keyfn in _KEYS:
             bucket = self._ratios[tier].get(keyfn(it), [])
-            if len(bucket) >= self._cfg.min_bucket:
+            if bucket and len(bucket) >= self._cfg.min_bucket:
                 return self._medians(bucket), tier
         return self._global, GLOBAL
 
@@ -63,7 +63,7 @@ class Calibration:
         """Highest price the item's own bucket has ever actually fetched."""
         for tier, keyfn in _KEYS:
             bucket = self._prices[tier].get(keyfn(it), [])
-            if len(bucket) >= self._cfg.min_bucket:
+            if bucket and len(bucket) >= self._cfg.min_bucket:
                 return _percentile(bucket, self._cfg.cap_percentile)
         return None
 
@@ -108,10 +108,11 @@ def derive_rows(gap_items, calibration):
             avg = cap
             mn = min(mn, avg)
 
-        # Never price below what a vendor pays for the item.
-        floored = avg < it.sell_price
-        if floored:
-            avg = it.sell_price
+        # Never price below what a vendor pays for the item. minPrice is the
+        # buyout the bot actually asks, so the floor has to lift it too.
+        floored = avg < it.sell_price or mn < it.sell_price
+        avg = max(avg, it.sell_price)
+        mn = max(mn, it.sell_price)
         mn = max(1, min(round(mn), round(avg)))
         avg = max(1, round(avg))
 

@@ -106,6 +106,19 @@ class CapAndFloorTest(unittest.TestCase):
         self.assertEqual(rows[0][1], 900)
         self.assertTrue(report[0]["floored"])
 
+    def test_floor_lifts_the_min_price_too(self):
+        # The floor exists because no seller lists below vendor buyback, and
+        # minPrice is the buyout the AH bot actually asks.
+        items = [item(i, buy=1000) for i in range(1, 6)]
+        mk = [market(i, 100, mn=50) for i in range(1, 6)]
+        cal = calibrate.fit(items, mk, CFG)
+
+        rows, _ = calibrate.derive_rows([item(999, buy=1000, sell=900)], cal)
+
+        _entry, avg, mn = rows[0]
+        self.assertEqual(avg, 900)
+        self.assertEqual(mn, 900)
+
     def test_min_price_never_exceeds_avg_price(self):
         # A bucket whose recorded minimum buyout sits above its average price
         # (bad scrape data) must not emit a row the AH bot would price upside
@@ -118,6 +131,20 @@ class CapAndFloorTest(unittest.TestCase):
 
         _entry, avg, mn = rows[0]
         self.assertLessEqual(mn, avg)
+
+
+class DegenerateInputTest(unittest.TestCase):
+    def test_empty_bucket_never_satisfies_the_minimum(self):
+        # A min_bucket of 0 would otherwise make every empty bucket "big
+        # enough" and take the median of nothing.
+        cal = calibrate.fit([], [], calibrate.Config(min_bucket=0,
+                                                     cap_percentile=0.99))
+
+        (mult, _mn), tier = cal.multiplier(item(999))
+
+        self.assertEqual(tier, "global")
+        self.assertEqual(mult, 1.0)
+        self.assertIsNone(cal.cap(item(999)))
 
 
 class EligibilityTest(unittest.TestCase):
