@@ -100,6 +100,12 @@ prioritises listing items that have an override and falls back to fixed defaults
 wowauctions.net's JSON endpoint keyed by item id. Price changes that swing far from the
 previous overrides land in a `reports/deviations-*.csv` worklist for manual review.
 
+An override also counts as a price for the "item has no price" filter. Quest class drops and
+a few other tradeable items carry neither a BuyPrice nor a SellPrice in `item_template`, and
+without this the seller dropped them before any other filter ran, however well priced they
+are. Every other filter still applies. The override maps are therefore loaded before the
+three faction configs initialize, since `InitializeBins()` reads them.
+
 ### Reagent-cost derivation
 
 Craftable items that never traded on ChromieCraft get a price derived from their reagents.
@@ -163,7 +169,9 @@ nothing about vendors, so some of those items carry a price far above what the v
 door charges. The seller caps the per-item buyout at the vendor's gold price, taken from
 `npc_vendor` rows that cost gold only (`ExtendedCost = 0`) and have unlimited stock
 (`maxcount = 0`). Limited-stock and token-priced items keep their scraped price, since the
-scarcity there is real. `AuctionHouseBot.DEBUG_SELLER` logs each capped listing.
+scarcity there is real. `AuctionHouseBot.DEBUG_SELLER` logs each capped listing. The vendor
+prices load once, alongside the price, count and demand overrides, and are shared across the
+three faction configs; `.reload config` picks up `npc_vendor` changes.
 
 ### Performance
 

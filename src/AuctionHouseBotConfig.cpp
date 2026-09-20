@@ -2608,52 +2608,6 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     }
 
     //
-    // Reload the vendor gold prices.
-    //
-    // Only rows a player can buy for gold, in unlimited quantity, say anything
-    // about what the item is worth: an ExtendedCost row is paid in honor or
-    // tokens, and a limited stock (maxcount) makes the item scarce enough that
-    // an auction house premium is legitimate. The rest have a hard ceiling -
-    // nobody bids on what the vendor next door sells cheaper.
-    //
-
-    VendorGoldPrices.clear();
-
-    // BuyPrice is the cost of a whole BuyCount bundle, not of a single item:
-    // the core charges BuyPrice * count and hands over BuyCount * count items.
-    // The bot prices per item, so divide. Integer division keeps the result an
-    // integer for the field reader, and the floor never drops to zero, which
-    // the getter would read as "no vendor sells this".
-
-    QueryResult vendorPriceResults = WorldDatabase.Query(
-        "SELECT nv.item, MIN(GREATEST(1, it.BuyPrice DIV it.BuyCount)) FROM npc_vendor nv "
-        "JOIN item_template it ON it.entry = nv.item "
-        "WHERE nv.ExtendedCost = 0 AND nv.maxcount = 0 AND it.BuyPrice > 0 AND it.BuyCount > 0 "
-        "GROUP BY nv.item");
-
-    if (vendorPriceResults)
-    {
-        do
-        {
-            Field* fields = vendorPriceResults->Fetch();
-            VendorGoldPrices[fields[0].Get<uint32>()] = fields[1].Get<uint64>();
-
-        } while (vendorPriceResults->NextRow());
-    }
-    else
-    {
-        if (DebugOutConfig)
-        {
-            LOG_ERROR("module", "AuctionHouseBot: failed to retrieve vendor gold prices");
-        }
-    }
-
-    if (DebugOutConfig)
-    {
-        LOG_INFO("module", "Loaded {} vendor gold prices", uint32(VendorGoldPrices.size()));
-    }
-
-    //
     // Reload the list from the lootable items
     //
 
@@ -2802,29 +2756,42 @@ void AHBConfig::InitializeBins()
         //
         // Exclude items with no possible price
         //
+        // A price override is a price source in its own right: quest class
+        // drops and other tradeable items carry no vendor price at all, so
+        // without this the seller would drop them even though both the seller
+        // and the buyer know what they are worth.
+        //
 
-        if (UseBuyPriceForSeller)
+        // avgPrice specifically: it is what the seller uses as the buyout
+        // baseline, and a row carrying only a minPrice would list at 0.
+
+        bool hasPriceOverride = std::get<0>(GetPriceOverrideForItem(itr->second.ItemId)) > 0;
+
+        if (!hasPriceOverride)
         {
-            if (itr->second.BuyPrice == 0)
+            if (UseBuyPriceForSeller)
+            {
+                if (itr->second.BuyPrice == 0)
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                if (itr->second.SellPrice == 0)
+                {
+                    continue;
+                }
+            }
+
+            //
+            // Exclude items with no costs associated, in any case
+            //
+
+            if ((itr->second.BuyPrice == 0) && (itr->second.SellPrice == 0))
             {
                 continue;
             }
-        }
-        else
-        {
-            if (itr->second.SellPrice == 0)
-            {
-                continue;
-            }
-        }
-
-        //
-        // Exclude items with no costs associated, in any case
-        //
-
-        if ((itr->second.BuyPrice == 0) && (itr->second.SellPrice == 0))
-        {
-            continue;
         }
 
         //
@@ -3636,6 +3603,47 @@ void AHBConfig::LoadPriceOverrides()
     } while (result->NextRow());
 
     LOG_INFO("module", "AHBConfig: Loaded {} price overrides from mod_auctionhousebot_priceOverride", itemPriceOverrides.size());
+}
+
+void AHBConfig::LoadVendorGoldPrices()
+{
+    //
+    // Only rows a player can buy for gold, in unlimited quantity, say anything
+    // about what the item is worth: an ExtendedCost row is paid in honor or
+    // tokens, and a limited stock (maxcount) makes the item scarce enough that
+    // an auction house premium is legitimate. The rest have a hard ceiling -
+    // nobody bids on what the vendor next door sells cheaper.
+    //
+
+    VendorGoldPrices.clear();
+
+    // BuyPrice is the cost of a whole BuyCount bundle, not of a single item:
+    // the core charges BuyPrice * count and hands over BuyCount * count items.
+    // The bot prices per item, so divide. Integer division keeps the result an
+    // integer for the field reader, and the floor never drops to zero, which
+    // the getter would read as "no vendor sells this".
+
+    QueryResult vendorPriceResults = WorldDatabase.Query(
+        "SELECT nv.item, MIN(GREATEST(1, it.BuyPrice DIV it.BuyCount)) FROM npc_vendor nv "
+        "JOIN item_template it ON it.entry = nv.item "
+        "WHERE nv.ExtendedCost = 0 AND nv.maxcount = 0 AND it.BuyPrice > 0 AND it.BuyCount > 0 "
+        "GROUP BY nv.item");
+
+    if (vendorPriceResults)
+    {
+        do
+        {
+            Field* fields = vendorPriceResults->Fetch();
+            VendorGoldPrices[fields[0].Get<uint32>()] = fields[1].Get<uint64>();
+
+        } while (vendorPriceResults->NextRow());
+    }
+    else
+    {
+        LOG_ERROR("module", "AHBConfig: failed to retrieve vendor gold prices");
+    }
+
+    LOG_INFO("module", "AHBConfig: Loaded {} vendor gold prices", uint32(VendorGoldPrices.size()));
 }
 
 std::tuple<uint64, uint64> AHBConfig::GetPriceOverrideForItem(uint32 itemId) const

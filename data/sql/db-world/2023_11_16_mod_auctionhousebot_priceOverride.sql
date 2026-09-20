@@ -5849,6 +5849,7 @@ INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18298, 80000, 80000);
 INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18332, 1977860, 1186716);
 INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18333, 493599, 493599);
 INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18334, 490000, 490000);
+INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18335, 202999, 200000);
 INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18337, 30000, 30000);
 INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18338, 350000, 350000);
 INSERT INTO `mod_auctionhousebot_priceOverride` VALUES (18339, 50000, 50000);

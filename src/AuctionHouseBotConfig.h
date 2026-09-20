@@ -23,6 +23,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <unordered_map>
 
@@ -407,6 +408,7 @@ public:
     uint64 GetItemPrice(uint32 id);
 
     void LoadPriceOverrides();
+    void LoadVendorGoldPrices();
     bool IsSellableItem(uint32 itemId) const;
     uint64 GetVendorPriceForItem(uint32 itemId) const;
     void LoadCountOverrides();
