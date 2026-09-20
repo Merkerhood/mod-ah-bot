@@ -11,8 +11,24 @@ Run against the Merkerhood realm's `acore_world` (adjust host/creds):
 mysql -N -B acore_world -e "
   SELECT entry FROM item_template
   WHERE bonding IN (0,2,3) AND Quality <= 5 AND class NOT IN (12,13)
+    AND entry NOT IN (SELECT item FROM npc_vendor
+                      WHERE ExtendedCost = 0 AND maxcount = 0)
+    AND entry NOT IN (SELECT item FROM game_event_npc_vendor
+                      WHERE ExtendedCost = 0 AND maxcount = 0)
   ORDER BY entry;" > candidates.csv
 ```
+
+An item a vendor stocks without limit and sells for gold stays out of the
+override table. A player buys it from the NPC whenever they want at a fixed
+price, so an auction for it is bait: the scraped market price is either far
+above what the vendor charges or so close to it that the listing has no reason
+to exist. Without an override the seller prices off the item's own vendor value
+and the vendor price ceiling caps the listing there.
+
+The two qualifiers matter. `ExtendedCost` rows are paid in honor or tokens
+rather than gold, and a limited `maxcount` makes the item scarce enough that an
+auction house premium is legitimate; both keep their override. This is the same
+line the vendor price ceiling draws in `AHBConfig::LoadVendorGoldPrices`.
 
 ## 2. Run the backfill
 
