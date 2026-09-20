@@ -48,6 +48,32 @@ def parse_spell_dbc(path: str) -> Dict[int, Tuple[int, List[Tuple[int, int]]]]:
     return recipes
 
 
+def parse_spell_to_item(path: str) -> Dict[int, int]:
+    """Map craft spell id -> item it creates.
+
+    parse_spell_dbc keys on the created item and drops reagent-less spells, so
+    it cannot answer "what does this recipe teach". A recipe item's spellid_2
+    is the craft spell; this is the lookup that turns it into a product.
+    """
+    with open(path, "rb") as fh:
+        blob = fh.read()
+    magic, rc, fc, rs, _sb = struct.unpack("<4siiii", blob[:20])
+    if magic != b"WDBC":
+        raise ValueError("not a WDBC file: %r" % magic)
+    if rs != fc * 4:
+        raise ValueError("record_size %d != field_count*4 %d" % (rs, fc * 4))
+    out: Dict[int, int] = {}
+    off = 20
+    for _ in range(rc):
+        fields = struct.unpack("<%di" % fc, blob[off:off + rs])
+        off += rs
+        for ei, ii in zip(_EFFECT, _EFFECT_ITEM):
+            if fields[ei] in CREATE_ITEM_EFFECTS and fields[ii] > 0:
+                out[fields[_ID]] = fields[ii]
+                break
+    return out
+
+
 def validate(recipes: Dict[int, Tuple[int, List[Tuple[int, int]]]]) -> None:
     if len(recipes) < 500:
         raise ValueError("only %d recipes parsed; offsets/build likely wrong" % len(recipes))

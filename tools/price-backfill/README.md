@@ -171,3 +171,70 @@ own rather than a class multiplier. Items with `BuyPrice = 0` have no anchor and
 are left to the C++ default; the report lists them as `no-anchor`.
 
 Tuning: `--min-bucket` (30), `--cap-percentile` (0.99), `--exclude-classes` (9).
+## Skill-rank pricing (profession recipes)
+
+Reagent-cost derivation prices the item a recipe **produces**. The recipe itself
+is a different good: its value is the access it grants, so it gets its own
+basis. The anchor is the required skill rank, modified by the value of the item
+the recipe teaches, fitted against the recipes that already carry a market
+price. Pricing recipes off their vendor `SellPrice` — what happens without an
+override — is wrong by a median factor of 32.
+
+1. Export the class-9 items (run against `acore_world`):
+
+```bash
+mysql -B acore_world -e "
+  CREATE TEMPORARY TABLE lt (item INT PRIMARY KEY);
+  INSERT IGNORE INTO lt
+   SELECT item FROM creature_loot_template UNION SELECT item FROM reference_loot_template UNION
+   SELECT item FROM disenchant_loot_template UNION SELECT item FROM fishing_loot_template UNION
+   SELECT item FROM gameobject_loot_template UNION SELECT item FROM item_loot_template UNION
+   SELECT item FROM milling_loot_template UNION SELECT item FROM pickpocketing_loot_template UNION
+   SELECT item FROM prospecting_loot_template UNION SELECT item FROM skinning_loot_template;
+  CREATE TEMPORARY TABLE qr (item INT PRIMARY KEY);
+  INSERT IGNORE INTO qr
+   SELECT RewardItem1 FROM quest_template UNION SELECT RewardItem2 FROM quest_template UNION
+   SELECT RewardItem3 FROM quest_template UNION SELECT RewardItem4 FROM quest_template UNION
+   SELECT RewardChoiceItemID1 FROM quest_template UNION SELECT RewardChoiceItemID2 FROM quest_template UNION
+   SELECT RewardChoiceItemID3 FROM quest_template UNION SELECT RewardChoiceItemID4 FROM quest_template UNION
+   SELECT RewardChoiceItemID5 FROM quest_template UNION SELECT RewardChoiceItemID6 FROM quest_template;
+  SELECT i.entry, i.RequiredSkill AS skill, i.RequiredSkillRank AS \`rank\`, i.Quality AS quality,
+    i.SellPrice AS sell_price, i.spellid_2 AS teach_spell,
+    (i.entry IN (SELECT item FROM lt) OR i.entry IN (SELECT item FROM npc_vendor)
+     OR i.entry IN (SELECT item FROM qr)) AS obtainable,
+    (i.entry IN (SELECT item FROM npc_vendor WHERE ExtendedCost=0 AND maxcount=0)
+     OR i.entry IN (SELECT item FROM game_event_npc_vendor WHERE ExtendedCost=0 AND maxcount=0)) AS free_vendor
+  FROM item_template i
+  WHERE i.class=9 AND i.bonding IN (0,2,3) AND i.Quality <= 5
+  ORDER BY i.entry;" | tr '\t' ',' > class9_items.csv
+```
+
+`obtainable` keeps out recipes no player can ever acquire — roughly a third of
+item class 9 has no loot table, no vendor and no quest reward, and an override
+for one of those is a row nothing ever reads. `free_vendor` draws the same line
+as the ChromieCraft export above.
+
+2. Refresh `spell_to_item.json` when the client data changes (run on the realm
+   host, which has the DBC). `spellid_2` on a recipe is its craft spell; this is
+   what turns it into the item taught:
+
+```bash
+python3 -c "import json, spelldbc; m=spelldbc.parse_spell_to_item('/srv/harness/clientdata/dbc/Spell.dbc'); assert m[3961]==4389; json.dump({str(k):v for k,v in sorted(m.items())}, open('spell_to_item.json','w'))"
+```
+
+3. Merge the recipe prices in:
+
+```bash
+python3 recipe_backfill.py --items-csv class9_items.csv \
+  --spell-to-item-json spell_to_item.json \
+  --existing-sql ../../data/sql/db-world/2023_11_16_mod_auctionhousebot_priceOverride.sql \
+  --report reports/recipe-rank-prices.csv
+```
+
+Only ADDs recipes with no existing override. The run prints the holdout median
+error; ChromieCraft's own recipe prices are noisy enough that this sits around
+x3, so review `reports/recipe-rank-prices.csv` before committing — the `clamp`
+column flags every row the per-rank band or the vendor floor moved.
+
+Tuning: `--min-ratio` (0.85, minPrice as a fraction of avgPrice), `--min-bucket`
+(8, observations a rank bucket needs before it gets its own clamp band).

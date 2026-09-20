@@ -58,6 +58,33 @@ class ParseTest(unittest.TestCase):
         spelldbc.validate(big)  # no raise
 
 
+class SpellToItemTest(unittest.TestCase):
+    """A recipe item's spellid_2 is the craft spell; this maps it to the item
+    the recipe teaches, which parse_spell_dbc discards by keying on the output."""
+
+    def _write(self, records):
+        fd, path = tempfile.mkstemp(suffix=".dbc")
+        os.write(fd, _dbc(records)); os.close(fd)
+        self.addCleanup(os.remove, path)
+        return path
+
+    def test_maps_craft_spell_to_created_item(self):
+        path = self._write([_record(GYRO), _record(NOISE)])
+        self.assertEqual(spelldbc.parse_spell_to_item(path), {3961: 4389})
+
+    def test_includes_a_create_spell_with_no_reagents(self):
+        # conjure-style spells carry no reagents; parse_spell_dbc drops them,
+        # but the taught-item link is still valid.
+        rec = {0: 4100, 71: 24, 107: 5100}
+        path = self._write([_record(rec)])
+        self.assertEqual(spelldbc.parse_spell_to_item(path), {4100: 5100})
+
+    def test_first_create_effect_wins(self):
+        rec = {0: 4200, 71: 24, 107: 5200, 72: 66, 108: 5201}
+        path = self._write([_record(rec)])
+        self.assertEqual(spelldbc.parse_spell_to_item(path), {4200: 5200})
+
+
 class YieldExtractionTest(unittest.TestCase):
     """EffectBasePoints (field 80-82) drives the recipe yield instead of a
     hardcoded 1: yield = basePoints + 1 (WotLK 3.3.5a effect-value formula)."""
