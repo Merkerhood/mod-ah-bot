@@ -2619,10 +2619,16 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
 
     VendorGoldPrices.clear();
 
+    // BuyPrice is the cost of a whole BuyCount bundle, not of a single item:
+    // the core charges BuyPrice * count and hands over BuyCount * count items.
+    // The bot prices per item, so divide. Integer division keeps the result an
+    // integer for the field reader, and the floor never drops to zero, which
+    // the getter would read as "no vendor sells this".
+
     QueryResult vendorPriceResults = WorldDatabase.Query(
-        "SELECT nv.item, MIN(it.BuyPrice) FROM npc_vendor nv "
+        "SELECT nv.item, MIN(GREATEST(1, it.BuyPrice DIV it.BuyCount)) FROM npc_vendor nv "
         "JOIN item_template it ON it.entry = nv.item "
-        "WHERE nv.ExtendedCost = 0 AND nv.maxcount = 0 AND it.BuyPrice > 0 "
+        "WHERE nv.ExtendedCost = 0 AND nv.maxcount = 0 AND it.BuyPrice > 0 AND it.BuyCount > 0 "
         "GROUP BY nv.item");
 
     if (vendorPriceResults)
