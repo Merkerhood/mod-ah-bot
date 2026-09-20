@@ -278,6 +278,12 @@ AHBConfig::AHBConfig(uint32 ahid, AHBConfig* conf)
         LootItems.insert(id);
     }
 
+    VendorGoldPrices.clear();
+    for (auto const& entry: conf->VendorGoldPrices)
+    {
+        VendorGoldPrices.insert(entry);
+    }
+
     DisableItemStore.clear();
     for (uint32 id: conf->DisableItemStore)
     {
@@ -588,6 +594,7 @@ void AHBConfig::Reset()
 
     NpcItems.clear();
     LootItems.clear();
+    VendorGoldPrices.clear();
 
     DisableItemStore.clear();
     SellerWhiteList.clear();
@@ -2601,6 +2608,46 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     }
 
     //
+    // Reload the vendor gold prices.
+    //
+    // Only rows a player can buy for gold, in unlimited quantity, say anything
+    // about what the item is worth: an ExtendedCost row is paid in honor or
+    // tokens, and a limited stock (maxcount) makes the item scarce enough that
+    // an auction house premium is legitimate. The rest have a hard ceiling -
+    // nobody bids on what the vendor next door sells cheaper.
+    //
+
+    VendorGoldPrices.clear();
+
+    QueryResult vendorPriceResults = WorldDatabase.Query(
+        "SELECT nv.item, MIN(it.BuyPrice) FROM npc_vendor nv "
+        "JOIN item_template it ON it.entry = nv.item "
+        "WHERE nv.ExtendedCost = 0 AND nv.maxcount = 0 AND it.BuyPrice > 0 "
+        "GROUP BY nv.item");
+
+    if (vendorPriceResults)
+    {
+        do
+        {
+            Field* fields = vendorPriceResults->Fetch();
+            VendorGoldPrices[fields[0].Get<uint32>()] = fields[1].Get<uint64>();
+
+        } while (vendorPriceResults->NextRow());
+    }
+    else
+    {
+        if (DebugOutConfig)
+        {
+            LOG_ERROR("module", "AuctionHouseBot: failed to retrieve vendor gold prices");
+        }
+    }
+
+    if (DebugOutConfig)
+    {
+        LOG_INFO("module", "Loaded {} vendor gold prices", uint32(VendorGoldPrices.size()));
+    }
+
+    //
     // Reload the list from the lootable items
     //
 
@@ -3626,6 +3673,17 @@ void AHBConfig::LoadCountOverrides()
 bool AHBConfig::IsSellableItem(uint32 itemId) const
 {
     return SellableItems.find(itemId) != SellableItems.end();
+}
+
+uint64 AHBConfig::GetVendorPriceForItem(uint32 itemId) const
+{
+    auto it = VendorGoldPrices.find(itemId);
+    if (it != VendorGoldPrices.end())
+    {
+        return it->second;
+    }
+    // 0 means "no vendor sells this freely for gold" -> no ceiling applies
+    return 0;
 }
 
 uint32 AHBConfig::GetCountOverrideForItem(uint32 itemId) const

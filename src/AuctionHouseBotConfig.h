@@ -259,6 +259,10 @@ public:
     std::set<uint32> DisableItemStore;
     std::set<uint32> SellerWhiteList;
 
+    // Gold price of every item a vendor sells for gold in unlimited quantity.
+    // Caps what the seller may ask for those items.
+    std::map<uint32, uint64> VendorGoldPrices;
+
     // Bins for trade goods.
     std::set<uint32> GreyTradeGoodsBin;
     std::set<uint32> WhiteTradeGoodsBin;
@@ -404,6 +408,7 @@ public:
 
     void LoadPriceOverrides();
     bool IsSellableItem(uint32 itemId) const;
+    uint64 GetVendorPriceForItem(uint32 itemId) const;
     void LoadCountOverrides();
 
     void LoadBotGUIDs();
